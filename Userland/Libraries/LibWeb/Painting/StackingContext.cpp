@@ -71,6 +71,8 @@ static PaintPhase to_paint_phase(StackingContext::StackingContextPaintPhase phas
 
 void StackingContext::paint_descendants(PaintContext& context, Layout::Node const& box, StackingContextPaintPhase phase) const
 {
+    // dbgln("paint_descendants of {} where box = {}", m_box.debug_description(), box.debug_description());
+
     if (auto* paintable = box.paintable())
         paintable->before_children_paint(context, to_paint_phase(phase), Paintable::ShouldClipOverflow::Yes);
 
@@ -130,12 +132,15 @@ void StackingContext::paint_descendants(PaintContext& context, Layout::Node cons
 
 void StackingContext::paint_internal(PaintContext& context) const
 {
+    // dbgln("paint_internal = {}", m_box.debug_description());
+
     // For a more elaborate description of the algorithm, see CSS 2.1 Appendix E
     // Draw the background and borders for the context root (steps 1, 2)
     paint_node(m_box, context, PaintPhase::Background);
     paint_node(m_box, context, PaintPhase::Border);
 
     auto paint_child = [&](auto* child) {
+        dbgln(">paint child = {}", child->m_box.debug_description());
         auto parent = child->m_box.parent();
         auto should_clip_overflow = child->m_box.is_absolutely_positioned() ? Paintable::ShouldClipOverflow::No : Paintable::ShouldClipOverflow::Yes;
         auto* paintable = parent ? parent->paintable() : nullptr;
@@ -147,10 +152,12 @@ void StackingContext::paint_internal(PaintContext& context) const
     };
 
     // Draw positioned descendants with negative z-indices (step 3)
+    // dbgln(">>>>>>draw positioned descendants with negative z-indices START");
     for (auto* child : m_children) {
         if (child->m_box.computed_values().z_index().has_value() && child->m_box.computed_values().z_index().value() < 0)
             paint_child(child);
     }
+    // dbgln(">>>>>>draw positioned descendants with negative z-indices END");
 
     // Draw the background and borders for block-level children (step 4)
     paint_descendants(context, m_box, StackingContextPaintPhase::BackgroundAndBorders);
@@ -164,6 +171,7 @@ void StackingContext::paint_internal(PaintContext& context) const
     // Draw positioned descendants with z-index `0` or `auto` in tree order. (step 8)
     // NOTE: Non-positioned descendants that establish stacking contexts with z-index `0` or `auto` are also painted here.
     // FIXME: There's more to this step that we have yet to understand and implement.
+    dbgln(">>>>>>draw positioned descendants with z-index = 0 START for box = {}", m_box.debug_description());
     m_box.paint_box()->for_each_in_subtree_of_type<PaintableBox>([&](PaintableBox const& paint_box) {
         auto const& z_index = paint_box.computed_values().z_index();
         if (auto* child = paint_box.stacking_context()) {
@@ -191,6 +199,7 @@ void StackingContext::paint_internal(PaintContext& context) const
 
         return TraversalDecision::Continue;
     });
+    dbgln(">>>>>>draw positioned descendants with z-index = 0 END for box = {}", m_box.debug_description());
 
     // Draw other positioned descendants (step 9)
     for (auto* child : m_children) {
@@ -339,6 +348,8 @@ Gfx::AffineTransform StackingContext::affine_transform_matrix() const
 
 void StackingContext::paint(PaintContext& context) const
 {
+    // dbgln("paint = {}", m_box.debug_description());
+
     Gfx::PainterStateSaver saver(context.painter());
     if (m_box.is_fixed_position()) {
         context.painter().translate(-context.painter().translation());
@@ -581,7 +592,7 @@ void StackingContext::dump(int indent) const
     if (!affine_transform.is_identity()) {
         builder.appendff(", transform: {}", affine_transform);
     }
-    dbgln("{}", builder.string_view());
+    // dbgln("{}", builder.string_view());
     for (auto& child : m_children)
         child->dump(indent + 1);
 }

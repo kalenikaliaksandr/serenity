@@ -146,6 +146,9 @@ Painting::StackingContext* PaintableBox::enclosing_stacking_context()
 
 void PaintableBox::paint(PaintContext& context, PaintPhase phase) const
 {
+    if (phase == PaintPhase::Foreground)
+        dbgln("PaintableBox::paint phase = {} layout_node = {} m_clipping_overflow = {}", to_string(phase), layout_node().debug_description(), m_clipping_overflow);
+
     if (!is_visible())
         return;
 
@@ -317,6 +320,13 @@ void PaintableBox::before_children_paint(PaintContext& context, PaintPhase phase
 
     if (should_clip_overflow == ShouldClipOverflow::No)
         return;
+    
+    // 
+    // if (dom_node()) {
+    // dbgln(">before_children_paint phase = {} box = {} m_clipping_overflow = {}", to_string(phase), layout_box().debug_description(), m_clipping_overflow);
+    // } else {
+        // dbgln(">before_children_paint phase = {}");
+    // }
 
     // FIXME: Support more overflow variations.
     auto clip_rect = absolute_padding_box_rect().to_rounded<int>();
@@ -331,7 +341,10 @@ void PaintableBox::before_children_paint(PaintContext& context, PaintPhase phase
         }
     };
 
+    if (phase == PaintPhase::Foreground) dbgln(">before_children_paint phase = {} box = {} m_clipping_overflow = {}", to_string(phase), layout_box().debug_description(), m_clipping_overflow);
+
     if (overflow_x == CSS::Overflow::Hidden && overflow_y == CSS::Overflow::Hidden) {
+        if (phase == PaintPhase::Foreground) dbgln(">>>CLIP OVERFLOW");
         clip_overflow();
     }
     if (overflow_y == CSS::Overflow::Hidden || overflow_x == CSS::Overflow::Hidden) {
@@ -339,7 +352,7 @@ void PaintableBox::before_children_paint(PaintContext& context, PaintPhase phase
         if (border_radii_data.has_any_radius()) {
             auto corner_clipper = BorderRadiusCornerClipper::create(clip_rect, border_radii_data, CornerClip::Outside, BorderRadiusCornerClipper::UseCachedBitmap::No);
             if (corner_clipper.is_error()) {
-                dbgln("Failed to create overflow border-radius corner clipper: {}", corner_clipper.error());
+                // dbgln("Failed to create overflow border-radius corner clipper: {}", corner_clipper.error());
                 return;
             }
             clip_overflow();
@@ -347,6 +360,8 @@ void PaintableBox::before_children_paint(PaintContext& context, PaintPhase phase
             m_overflow_corner_radius_clipper->sample_under_corners(context.painter());
         }
     }
+
+    // dbgln("2>before_children_paint phase = {} box = {} m_clipping_overflow = {}", to_string(phase), layout_box().debug_description(), m_clipping_overflow);
 }
 
 void PaintableBox::after_children_paint(PaintContext& context, PaintPhase phase, ShouldClipOverflow should_clip_overflow) const
@@ -356,6 +371,8 @@ void PaintableBox::after_children_paint(PaintContext& context, PaintPhase phase,
 
     if (should_clip_overflow == ShouldClipOverflow::No)
         return;
+
+    if (phase == PaintPhase::Foreground) dbgln(">after_children_paint phase = {} box = {} m_clipping_overflow = {}", to_string(phase), layout_box().debug_description(), m_clipping_overflow);
 
     // FIXME: Support more overflow variations.
     if (m_clipping_overflow) {

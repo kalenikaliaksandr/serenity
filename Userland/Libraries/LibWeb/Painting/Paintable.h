@@ -27,6 +27,27 @@ enum class PaintPhase {
     Overlay,
 };
 
+inline String to_string(const PaintPhase phase) {
+    // return "test";
+    switch (phase) {
+    case PaintPhase::Background: return "PaintPhase::Background";
+    case PaintPhase::Border: return "PaintPhase::Border";
+    case PaintPhase::Foreground: return "PaintPhase::Foreground";
+    case PaintPhase::FocusOutline: return "PaintPhase::FocusOutline";
+    case PaintPhase::Overlay: return "PaintPhase::Overlay";
+    default:
+        return ">>>test";
+    }
+}
+
+// template<>
+// struct AK::Formatter<PaintPhaser> : Formatter<StringView> {
+//     ErrorOr<void> format(FormatBuilder& builder, PaintPhase const& phase)
+//     {
+//         return Formatter<StringView>::format(builder, number);
+//     }
+// };
+
 struct HitTestResult {
     NonnullRefPtr<Painting::Paintable> paintable;
     int index_in_node { 0 };
