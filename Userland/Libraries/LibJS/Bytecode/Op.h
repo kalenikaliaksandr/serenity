@@ -462,9 +462,10 @@ private:
 
 class GetVariable final : public Instruction {
 public:
-    explicit GetVariable(IdentifierTableIndex identifier)
+    explicit GetVariable(IdentifierTableIndex identifier, bool is_global = false)
         : Instruction(Type::GetVariable)
         , m_identifier(identifier)
+        , m_is_global(is_global)
     {
     }
 
@@ -477,6 +478,7 @@ public:
 
 private:
     IdentifierTableIndex m_identifier;
+    bool m_is_global;
 
     Optional<EnvironmentCoordinate> mutable m_cached_environment_coordinate;
 };

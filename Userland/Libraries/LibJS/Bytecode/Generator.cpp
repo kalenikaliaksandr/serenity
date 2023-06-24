@@ -141,7 +141,7 @@ CodeGenerationErrorOr<void> Generator::emit_load_from_reference(JS::ASTNode cons
 {
     if (is<Identifier>(node)) {
         auto& identifier = static_cast<Identifier const&>(node);
-        emit<Bytecode::Op::GetVariable>(intern_identifier(identifier.string()));
+        emit<Bytecode::Op::GetVariable>(intern_identifier(identifier.string()), identifier.is_global());
         return {};
     }
     if (is<MemberExpression>(node)) {

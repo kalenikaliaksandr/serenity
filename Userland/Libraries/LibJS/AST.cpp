@@ -2659,7 +2659,7 @@ Completion Identifier::execute(Interpreter& interpreter) const
 void Identifier::dump(int indent) const
 {
     print_indent(indent);
-    outln("Identifier \"{}\"", m_string);
+    outln("Identifier \"{}\" is_global=({})", m_string, m_is_global);
 }
 
 Completion PrivateIdentifier::execute(Interpreter&) const

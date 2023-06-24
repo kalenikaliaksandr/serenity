@@ -60,6 +60,26 @@ private:
     }
 
 public:
+    bool is_global_scope_identifier(DeprecatedFlyString identifier_name) const
+    {
+        for (auto scope_pusher = this; scope_pusher->m_parent_scope; scope_pusher = scope_pusher->parent_scope()) {
+            for (auto& name : scope_pusher->m_forbidden_var_names) {
+                if (name == identifier_name)
+                    return false;
+            }
+
+            for (auto& name : scope_pusher->m_forbidden_lexical_names) {
+                if (name == identifier_name)
+                    return false;
+            }
+
+            if (scope_pusher->has_declaration(identifier_name))
+                return false;
+        }
+
+        return true;
+    }
+
     static ScopePusher function_scope(Parser& parser, FunctionBody& function_body, Vector<FunctionParameter> const& parameters)
     {
         ScopePusher scope_pusher(parser, &function_body, ScopeLevel::FunctionTopLevel);
@@ -1993,6 +2013,11 @@ NonnullRefPtr<Expression const> Parser::parse_expression(int min_precedence, Ass
             }
         }
 
+        if (m_state.current_scope_pusher->is_global_scope_identifier(identifier_instance->string())) {
+            auto& temp = const_cast<Expression&>(*expression);
+            static_cast<Identifier&>(temp).set_is_global();
+        }
+
         if (has_not_been_declared_as_variable) {
             if (identifier_instance->string() == "arguments"sv)
                 m_state.current_scope_pusher->set_contains_access_to_arguments_object();
@@ -3677,6 +3702,8 @@ NonnullRefPtr<Statement const> Parser::parse_for_statement()
     }
     consume(TokenType::Semicolon);
 
+    ScopePusher for_loop_scope = ScopePusher::for_loop_scope(*this, init);
+
     RefPtr<Expression const> test;
     if (!match(TokenType::Semicolon))
         test = parse_expression(0);
@@ -3691,7 +3718,6 @@ NonnullRefPtr<Statement const> Parser::parse_for_statement()
 
     TemporaryChange break_change(m_state.in_break_context, true);
     TemporaryChange continue_change(m_state.in_continue_context, true);
-    ScopePusher for_loop_scope = ScopePusher::for_loop_scope(*this, init);
     auto body = parse_statement();
 
     return create_ast_node<ForStatement>({ m_source_code, rule_start.position(), position() }, move(init), move(test), move(update), move(body));

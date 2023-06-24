@@ -1245,6 +1245,8 @@ public:
     }
 
     DeprecatedFlyString const& string() const { return m_string; }
+    bool is_global() const { return m_is_global; }
+    void set_is_global() { m_is_global = true; }
 
     virtual Completion execute(Interpreter&) const override;
     virtual void dump(int indent) const override;
@@ -1255,6 +1257,7 @@ private:
     virtual bool is_identifier() const override { return true; }
 
     DeprecatedFlyString m_string;
+    bool m_is_global;
     mutable EnvironmentCoordinate m_cached_environment_coordinate;
 };
 

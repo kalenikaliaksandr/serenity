@@ -373,7 +373,12 @@ ThrowCompletionOr<void> GetVariable::execute_impl(Bytecode::Interpreter& interpr
 
     auto get_reference = [&]() -> ThrowCompletionOr<Reference> {
         auto const& string = interpreter.current_executable().get_identifier(m_identifier);
-        if (m_cached_environment_coordinate.has_value()) {
+        if (m_is_global) {
+            Environment* environment = &interpreter.vm().current_realm()->global_environment();
+            if (!environment->is_permanently_screwed_by_eval()) {
+                return Reference { *environment, string, vm.in_strict_mode(), m_cached_environment_coordinate };
+            }
+        } else if (m_cached_environment_coordinate.has_value()) {
             Environment* environment = nullptr;
             if (m_cached_environment_coordinate->index == EnvironmentCoordinate::global_marker) {
                 environment = &interpreter.vm().current_realm()->global_environment();
