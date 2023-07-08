@@ -427,6 +427,11 @@ ThrowCompletionOr<void> GetLocal::execute_impl(Bytecode::Interpreter& interprete
 
 ThrowCompletionOr<void> DeleteVariable::execute_impl(Bytecode::Interpreter& interpreter) const
 {
+    if (m_is_local) {
+        interpreter.accumulator() = Value(false);
+        return {};
+    }
+
     auto& vm = interpreter.vm();
     auto const& string = interpreter.current_executable().get_identifier(m_identifier);
     auto reference = TRY(vm.resolve_binding(string));

@@ -545,9 +545,10 @@ private:
 
 class DeleteVariable final : public Instruction {
 public:
-    explicit DeleteVariable(IdentifierTableIndex identifier)
+    explicit DeleteVariable(IdentifierTableIndex identifier, bool is_local)
         : Instruction(Type::DeleteVariable)
         , m_identifier(identifier)
+        , m_is_local(is_local)
     {
     }
 
@@ -560,6 +561,7 @@ public:
 
 private:
     IdentifierTableIndex m_identifier;
+    bool m_is_local;
 };
 
 class GetById final : public Instruction {
