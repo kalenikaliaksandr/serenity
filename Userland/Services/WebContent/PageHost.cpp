@@ -20,6 +20,9 @@
 #include <WebContent/WebContentClientEndpoint.h>
 #include <WebContent/WebDriverConnection.h>
 
+#include <LibAccelGfx/Canvas.h>
+#include <LibAccelGfx/Painter.h>
+
 namespace WebContent {
 
 PageHost::PageHost(ConnectionFromClient& client)
@@ -120,6 +123,21 @@ Gfx::Color PageHost::background_color() const
 
 void PageHost::paint(Web::DevicePixelRect const& content_rect, Gfx::Bitmap& target)
 {
+    // (void)content_rect;
+    // (void)target;
+    // [[maybe_unused]] auto canvas = AccelGfx::Canvas::create(content_rect.size().to_type<int>()).release_value();
+
+    // [[maybe_unused]] AccelGfx::Painter accel_painter(canvas);
+    // accel_painter.clear(Color::Magenta);
+    // accel_painter.fill_rect(Gfx::IntRect { 100, 100, 200, 200 }, Color::Cyan);
+
+    // canvas.flush();
+
+    // Gfx::IntRect bitmap_rect { {}, content_rect.size().to_type<int>() };
+
+    // Gfx::Painter painter(target);
+    // painter.blit({ 0, 0 }, canvas.bitmap(), bitmap_rect);
+
     Gfx::IntRect bitmap_rect { {}, content_rect.size().to_type<int>() };
 
     auto document = page().top_level_browsing_context().active_document();
