@@ -32,6 +32,9 @@ void Canvas::initialize()
     EGLint minor;
     eglInitialize(egl_display, &major, &minor);
 
+    const GLubyte* glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
+    printf("GLSL Version: %s\n", glslVersion);
+
     static const EGLint config_attributes[] = {
         EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
         EGL_BLUE_SIZE, 8,

@@ -27,11 +27,10 @@ struct CommandExecutionState {
 
 CommandResult FillRectWithRoundedCorners::execute(CommandExecutionState& state) const
 {
-    dbgln("> FillRectWithRoundedCorners::execute rect=({}) color=({})", rect, color);
+    // dbgln("> FillRectWithRoundedCorners::execute rect=({}) color=({})", rect, color);
 
     if (color.alpha() == 0)
         return CommandResult::Continue;
-    dbgln("> FillRectWithRoundedCorners::execute rect=({}) color=({})", rect, color);
     state.painter.fill_rect(rect, color);
     return CommandResult::Continue;
 
@@ -160,8 +159,9 @@ CommandResult FillRect::execute(CommandExecutionState& state) const
 CommandResult DrawScaledBitmap::execute(CommandExecutionState& state) const
 {
     dbgln(">DrawScaledBitmap");
-
     (void)state;
+
+    state.painter.draw_scaled_bitmap(dst_rect, bitmap, src_rect);
     return CommandResult::Continue;
 
     // if (state.would_be_fully_clipped_by_painter(dst_rect))

@@ -155,11 +155,94 @@ void Painter::fill_rect(Gfx::FloatRect rect, Gfx::Color color)
     glDeleteProgram(program);
 }
 
+static Gfx::FloatRect to_texture_space(Gfx::FloatRect rect, Gfx::IntSize image_size) {
+    auto x = rect.x() / image_size.width();
+    auto y = rect.y() / image_size.height();
+    auto width = rect.width() / image_size.width();
+    auto height = rect.height() / image_size.height();
+
+    return { x, y, width, height };
+}
+
 void Painter::draw_scaled_bitmap(Gfx::IntRect const& dst_rect, Gfx::Bitmap const& bitmap, Gfx::IntRect const& src_rect)
 {
-    (void)dst_rect;
-    (void)bitmap;
-    (void)src_rect;
+    char const* vertex_shader_source = R"(
+    attribute vec4 aVertexPosition;
+    attribute vec2 aTextureCoord;
+    varying vec2 vTextureCoord;
+
+    void main() {
+        gl_Position = aVertexPosition;
+        vTextureCoord = aTextureCoord;
+    }
+)";
+
+    char const* fragment_shader_source = R"(
+    precision mediump float;
+
+    varying vec2 vTextureCoord;
+    uniform sampler2D uSampler;
+
+    void main() {
+        gl_FragColor = texture2D(uSampler, vTextureCoord);
+    }
+)";
+
+    GLuint vertex_shader = create_shader(GL_VERTEX_SHADER, vertex_shader_source);
+    GLuint fragment_shader = create_shader(GL_FRAGMENT_SHADER, fragment_shader_source);
+
+    GLuint program = glCreateProgram();
+
+    glAttachShader(program, vertex_shader);
+    glAttachShader(program, fragment_shader);
+    glLinkProgram(program);
+
+    int linked;
+    glGetProgramiv(program, GL_LINK_STATUS, &linked);
+    if (!linked) {
+        char buffer[512];
+        glGetProgramInfoLog(program, sizeof(buffer), nullptr, buffer);
+        dbgln("GLSL program linking failed: {}", buffer);
+        VERIFY_NOT_REACHED();
+    }
+
+    glUseProgram(program);
+
+    GLuint texture;
+
+    glGenTextures(1, &texture);
+    VERIFY(glGetError() == GL_NO_ERROR);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    VERIFY(glGetError() == GL_NO_ERROR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bitmap.width(), bitmap.height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, bitmap.scanline(0));
+    VERIFY(glGetError() == GL_NO_ERROR);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    VERIFY(glGetError() == GL_NO_ERROR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    VERIFY(glGetError() == GL_NO_ERROR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    VERIFY(glGetError() == GL_NO_ERROR);
+
+    auto vertices = rect_to_vertices(to_clip_space(transform().map(dst_rect.to_type<float>())));
+    auto texture_coordinates = rect_to_vertices(to_texture_space(src_rect.to_type<float>(), bitmap.size()));
+
+    GLuint vertex_position_attribute = glGetAttribLocation(program, "aVertexPosition");
+    glVertexAttribPointer(vertex_position_attribute, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), vertices.data());
+    glEnableVertexAttribArray(vertex_position_attribute);
+
+    GLuint texture_coord_attribute = glGetAttribLocation(program, "aTextureCoord");
+    glVertexAttribPointer(texture_coord_attribute, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), texture_coordinates.data());
+    glEnableVertexAttribArray(texture_coord_attribute);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    VERIFY(glGetError() == GL_NO_ERROR);
+
+    glDeleteShader(vertex_shader);
+    glDeleteShader(fragment_shader);
+    glDeleteProgram(program);
 }
 
 void Painter::save()
