@@ -51,6 +51,9 @@ public:
         }
     };
 
+    void translate(int dx, int dy) { translate({ dx, dy }); }
+    void translate(Gfx::IntPoint delta) { state().transform.translate(delta.to_type<float>()); }
+
 private:
     void flush();
 

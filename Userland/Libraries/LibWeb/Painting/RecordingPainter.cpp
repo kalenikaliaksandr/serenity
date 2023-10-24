@@ -176,6 +176,7 @@ CommandResult DrawScaledBitmap::execute(CommandExecutionState& state) const
 CommandResult Translate::execute(CommandExecutionState& state) const
 {
     (void)state;
+    state.painter.translate(translation_delta);
     return CommandResult::Continue;
 
     // auto& painter = state.painter();
@@ -185,7 +186,7 @@ CommandResult Translate::execute(CommandExecutionState& state) const
 
 CommandResult SaveState::execute(CommandExecutionState& state) const
 {
-    (void)state;
+    state.painter.save();
     return CommandResult::Continue;
 
     // auto& painter = state.painter();
@@ -195,7 +196,7 @@ CommandResult SaveState::execute(CommandExecutionState& state) const
 
 CommandResult RestoreState::execute(CommandExecutionState& state) const
 {
-    (void)state;
+    state.painter.restore();
     return CommandResult::Continue;
 
     // auto& painter = state.painter();

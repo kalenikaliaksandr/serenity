@@ -337,7 +337,7 @@ void Painter::draw_text_run(Gfx::FloatPoint baseline_start, Utf8View const& stri
 
             auto texture_rect = to_texture_space(maybe_texture_rect.value().to_type<float>(), m_glyph_atlas->size());
 
-            auto rect = Gfx::FloatRect { point + Gfx::FloatPoint(font.glyph_left_bearing(code_point), 0), glyph.bitmap()->rect().size().to_type<float>() };
+            auto rect = Gfx::FloatRect { transform().map(point + Gfx::FloatPoint(font.glyph_left_bearing(code_point), 0)), glyph.bitmap()->rect().size().to_type<float>() };
             auto rect_in_clip_space = to_clip_space(rect);
 
             // p0 --- p1
