@@ -493,8 +493,6 @@ private:
         m_painting_commands.append(command);
     }
 
-    RefPtr<Gfx::Bitmap> prepare_glyph_atlas();
-
     Vector<PaintingCommand> m_painting_commands;
 };
 

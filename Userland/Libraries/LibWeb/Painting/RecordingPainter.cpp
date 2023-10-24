@@ -72,14 +72,14 @@ CommandResult DrawText::execute(CommandExecutionState& state) const
 
 CommandResult DrawTextRun::execute(CommandExecutionState& state) const
 {
-    (void)state;
-    return CommandResult::Continue;
-
     // if (state.would_be_fully_clipped_by_painter(rect))
     //     return CommandResult::Continue;
     // auto& painter = state.painter();
     // painter.draw_text_run(baseline_start, Utf8View(string), font, color);
     // return CommandResult::Continue;
+
+    state.painter.draw_text_run(baseline_start.to_type<float>(), Utf8View(string), font, color);
+    return CommandResult::Continue;
 }
 
 CommandResult FillPathUsingColor::execute(CommandExecutionState& state) const
@@ -971,7 +971,7 @@ void RecordingPainter::draw_triangle_wave(Gfx::IntPoint a_p1, Gfx::IntPoint a_p2
         .thickness = thickness });
 }
 
-RefPtr<Gfx::Bitmap> RecordingPainter::prepare_glyph_atlas()
+void RecordingPainter::execute(Gfx::Bitmap& bitmap)
 {
     HashMap<NonnullRefPtr<Gfx::Font>, HashTable<u32>> unique_glyphs_per_font;
     for (auto& command : m_painting_commands) {
@@ -984,63 +984,10 @@ RefPtr<Gfx::Bitmap> RecordingPainter::prepare_glyph_atlas()
         }
     }
 
-    Vector<NonnullRefPtr<Gfx::Bitmap>> glyph_bitmaps;
-    dbgln(">>>unique_glyphs_per_font.size=({})", unique_glyphs_per_font.size());
-    for (auto const& [font, code_points] : unique_glyphs_per_font) {
-        dbgln("> font=({}) code_points count = ({})", font->name(), code_points.size());
-        StringBuilder builder;
-        for (auto const& code_point : code_points) {
-            builder.append_code_point(code_point);
-
-            auto glyph = font->glyph(code_point);
-            if (!glyph.bitmap()) {
-                // dbgln(">failed to get bitmap for font with name ({}) and code point ({})", font->name(), code_point);
-                continue;
-            }
-            glyph_bitmaps.append(*glyph.bitmap());
-            // dbgln(">glyph width=({}) height=({})", glyph.bitmap()->width(), glyph.bitmap()->height());
-        }
-        dbgln("> glyphs = ({})", builder.string_view());
-    }
-
-    int atlas_height = 0;
-    int atlas_width = 0;
-    for (auto const& bitmap : glyph_bitmaps) {
-        atlas_width += bitmap->width();
-        atlas_height = max(atlas_height, bitmap->height());
-    }
-
-    if (atlas_width == 0 || atlas_height == 0)
-        return {};
-
-    dbgln("atlas_width=({}) atlas_height=({})", atlas_width, atlas_height);
-    dbgln(">before");
-    auto atlas_bitmap = Gfx::Bitmap::create(Gfx::BitmapFormat::BGRA8888, { atlas_width, atlas_height }).release_value_but_fixme_should_propagate_errors();
-    dbgln(">after");
-    auto atlas_painter = Gfx::Painter(*atlas_bitmap);
-    auto current_width = 0;
-    for (auto const& bitmap : glyph_bitmaps) {
-        atlas_painter.blit({ current_width, 0 }, *bitmap, bitmap->rect());
-        current_width += bitmap->width();
-    }
-
-    auto encoded = MUST(Gfx::PNGWriter::encode(atlas_bitmap));
-
-    auto screenshot_file = MUST(Core::File::open("/home/alex/atlas.png"sv, Core::File::OpenMode::Write));
-    MUST(screenshot_file->write_until_depleted(encoded));
-
-    return {};
-}
-
-void RecordingPainter::execute(Gfx::Bitmap& bitmap)
-{
-    (void)prepare_glyph_atlas();
-
     auto canvas = AccelGfx::Canvas::create(bitmap.size()).release_value();
 
     CommandExecutionState state(canvas);
-    // state.painter.clear(Color::Magenta);
-
+    state.painter.prepare_glyph_atlas(unique_glyphs_per_font);
 
     for (auto& command : m_painting_commands) {
         command.visit([&](auto const& command) { return command.execute(state); });

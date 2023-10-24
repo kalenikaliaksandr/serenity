@@ -4,4 +4,4 @@ set(SOURCES
 )
 
 serenity_lib(LibAccelGfx accelgfx)
-target_link_libraries(LibAccelGfx PRIVATE LibGfx GL EGL)
+target_link_libraries(LibAccelGfx PRIVATE LibCore LibGfx GL EGL)
