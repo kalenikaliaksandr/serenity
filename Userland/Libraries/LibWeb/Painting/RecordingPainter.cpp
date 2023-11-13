@@ -432,6 +432,14 @@ void RecordingPainter::execute(PaintingCommandExecutor& executor)
         executor.prepare_glyph_texture(unique_glyphs);
     }
 
+    Vector<RefPtr<Gfx::Bitmap>> bitmaps;
+    for (auto& command : m_painting_commands) {
+        if (command.has<DrawScaledBitmap>()) {
+            bitmaps.append(command.get<DrawScaledBitmap>().bitmap);
+        }
+    }
+    executor.upload_textures_for_bitmaps(bitmaps);
+
     size_t next_command_index = 0;
     while (next_command_index < m_painting_commands.size()) {
         auto& command = m_painting_commands[next_command_index++];

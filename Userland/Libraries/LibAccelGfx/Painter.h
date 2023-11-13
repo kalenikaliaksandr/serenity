@@ -70,6 +70,8 @@ public:
     void set_target_bitmap(Gfx::Bitmap&);
     void flush();
 
+    void upload_textures_for_bitmaps(Vector<RefPtr<Gfx::Bitmap>> const& bitmaps);
+
 private:
     Context& m_context;
 
@@ -93,6 +95,8 @@ private:
 
     Optional<Gfx::Bitmap&> m_target_bitmap;
     Optional<GL::Framebuffer> m_target_framebuffer;
+
+    HashMap<Gfx::Bitmap const*, GL::Texture> m_textures;
 };
 
 }

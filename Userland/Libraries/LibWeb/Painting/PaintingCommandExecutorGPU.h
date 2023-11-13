@@ -52,6 +52,8 @@ public:
     virtual bool needs_prepare_glyphs_texture() const override { return true; }
     void prepare_glyph_texture(HashMap<Gfx::Font const*, HashTable<u32>> const&) override;
 
+    void upload_textures_for_bitmaps(Vector<RefPtr<Gfx::Bitmap>> const& bitmaps) override;
+
     PaintingCommandExecutorGPU(AccelGfx::Painter& painter);
     ~PaintingCommandExecutorGPU() override;
 

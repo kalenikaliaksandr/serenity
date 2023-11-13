@@ -51,6 +51,8 @@ public:
     bool needs_prepare_glyphs_texture() const override { return false; }
     void prepare_glyph_texture(HashMap<Gfx::Font const*, HashTable<u32>> const&) override {};
 
+    void upload_textures_for_bitmaps(Vector<RefPtr<Gfx::Bitmap>> const&) override {};
+
     PaintingCommandExecutorCPU(Gfx::Bitmap& bitmap);
 
 private:

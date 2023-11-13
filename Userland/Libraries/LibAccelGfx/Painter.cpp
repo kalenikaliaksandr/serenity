@@ -225,8 +225,10 @@ void Painter::draw_scaled_bitmap(Gfx::FloatRect const& dst_rect, Gfx::Bitmap con
     m_blit_program.use();
 
     // FIXME: We should reuse textures across repaints if possible.
-    auto texture = GL::create_texture();
-    GL::upload_texture_data(texture, bitmap);
+    // auto texture = GL::create_texture();
+    // GL::upload_texture_data(texture, bitmap);
+
+    GL::bind_texture(m_textures.get(&bitmap).value());
 
     auto scaling_mode_gl = to_gl_scaling_mode(scaling_mode);
     GL::set_texture_scale_mode(scaling_mode_gl);
@@ -265,7 +267,7 @@ void Painter::draw_scaled_bitmap(Gfx::FloatRect const& dst_rect, Gfx::Bitmap con
     GL::enable_blending();
     GL::draw_arrays(GL::DrawPrimitive::TriangleFan, 4);
 
-    GL::delete_texture(texture);
+    // GL::delete_texture(texture);
     GL::delete_buffer(vbo);
     GL::delete_vertex_array(vao);
 }
@@ -435,6 +437,29 @@ void Painter::flush()
     VERIFY(m_target_bitmap.has_value());
     GL::bind_framebuffer(*m_target_framebuffer);
     GL::read_pixels({ 0, 0, m_target_bitmap->width(), m_target_bitmap->height() }, *m_target_bitmap);
+}
+
+void Painter::upload_textures_for_bitmaps(Vector<RefPtr<Gfx::Bitmap>> const& bitmaps)
+{
+    dbgln(">>>Painter::upload_textures_for_bitmaps count=({})", bitmaps.size());
+
+    (void)bitmaps;
+
+    for (auto [bitmap, texture] : m_textures) {
+        if (!bitmaps.contains_slow(bitmap)) {
+            GL::delete_texture(texture);
+            m_textures.remove(bitmap);
+        }
+    }
+
+    for (auto const& bitmap : bitmaps) {
+        if (m_textures.contains(bitmap))
+            continue;
+
+        auto texture = GL::create_texture();
+        GL::upload_texture_data(texture, *bitmap);
+        m_textures.set(bitmap, texture);
+    }
 }
 
 }

@@ -243,4 +243,9 @@ void PaintingCommandExecutorGPU::prepare_glyph_texture(HashMap<Gfx::Font const*,
     m_painter.prepare_glyph_texture(unique_glyphs);
 }
 
+void PaintingCommandExecutorGPU::upload_textures_for_bitmaps(Vector<RefPtr<Gfx::Bitmap>> const& bitmaps)
+{
+    m_painter.upload_textures_for_bitmaps(bitmaps);
+}
+
 }
