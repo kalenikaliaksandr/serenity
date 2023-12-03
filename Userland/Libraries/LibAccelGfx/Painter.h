@@ -97,6 +97,12 @@ public:
     };
     void blit_blurred_canvas(Gfx::FloatRect const& dst_rect, Canvas const&, int radius, BlurDirection direction, ScalingMode = ScalingMode::NearestNeighbor);
 
+//    enum class BlurDirection {
+//        Horizontal,
+//        Vertical,
+//    };
+//    void blit_blurred_texture(Gfx::FloatRect const& dst_rect, GL::Texture const&, Gfx::FloatRect const& src_rect, int radius, BlurDirection direction, ScalingMode = ScalingMode::NearestNeighbor);
+
     void update_immutable_bitmap_texture_cache(HashMap<u32, Gfx::ImmutableBitmap const*>&);
 
 private:
