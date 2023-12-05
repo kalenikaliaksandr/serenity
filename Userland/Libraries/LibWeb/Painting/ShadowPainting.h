@@ -28,4 +28,45 @@ void paint_box_shadow(
     Vector<ShadowData> const&);
 void paint_text_shadow(PaintContext&, Layout::LineBoxFragment const&, Vector<ShadowData> const&);
 
+struct OuterBoxShadowMetrics {
+    DevicePixelRect shadow_bitmap_rect;
+    DevicePixelRect non_blurred_shadow_rect;
+    DevicePixelRect inner_bounding_rect;
+    DevicePixels blurred_edge_thickness;
+    DevicePixels double_radius;
+    DevicePixels blur_radius;
+
+    DevicePixelRect top_left_corner_rect;
+    DevicePixelRect top_right_corner_rect;
+    DevicePixelRect bottom_right_corner_rect;
+    DevicePixelRect bottom_left_corner_rect;
+
+    DevicePixelPoint top_left_corner_blit_pos;
+    DevicePixelPoint top_right_corner_blit_pos;
+    DevicePixelPoint bottom_right_corner_blit_pos;
+    DevicePixelPoint bottom_left_corner_blit_pos;
+
+    DevicePixelSize top_left_corner_size;
+    DevicePixelSize top_right_corner_size;
+    DevicePixelSize bottom_right_corner_size;
+    DevicePixelSize bottom_left_corner_size;
+
+    DevicePixels left_start;
+    DevicePixels top_start;
+    DevicePixels right_start;
+    DevicePixels bottom_start;
+
+    DevicePixelRect left_edge_rect;
+    DevicePixelRect right_edge_rect;
+    DevicePixelRect top_edge_rect;
+    DevicePixelRect bottom_edge_rect;
+
+    CornerRadius top_left_shadow_corner;
+    CornerRadius top_right_shadow_corner;
+    CornerRadius bottom_right_shadow_corner;
+    CornerRadius bottom_left_shadow_corner;
+};
+
+OuterBoxShadowMetrics get_outer_box_shadow_configuration(PaintOuterBoxShadowParams params);
+
 }

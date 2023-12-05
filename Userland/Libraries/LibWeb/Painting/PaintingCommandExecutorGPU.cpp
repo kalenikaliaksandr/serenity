@@ -7,6 +7,7 @@
 #include <LibAccelGfx/GlyphAtlas.h>
 #include <LibWeb/Painting/BorderRadiusCornerClipper.h>
 #include <LibWeb/Painting/PaintingCommandExecutorGPU.h>
+#include <LibWeb/Painting/ShadowPainting.h>
 
 namespace Web::Painting {
 
@@ -153,8 +154,151 @@ CommandResult PaintingCommandExecutorGPU::paint_linear_gradient(Gfx::IntRect con
     return CommandResult::Continue;
 }
 
-CommandResult PaintingCommandExecutorGPU::paint_outer_box_shadow(PaintOuterBoxShadowParams const&)
+CommandResult PaintingCommandExecutorGPU::paint_outer_box_shadow(PaintOuterBoxShadowParams const& params)
 {
+    auto shadow_config = get_outer_box_shadow_configuration(params);
+    (void)shadow_config;
+
+    dbgln(">>>paint_outer_box_shadow");
+
+    auto const& box_shadow_data = params.box_shadow_data;
+    auto const& inner_bounding_rect = shadow_config.inner_bounding_rect.to_type<int>();
+
+    auto const& top_left_corner_rect = shadow_config.top_left_corner_rect.to_type<int>();
+    auto const& top_right_corner_rect = shadow_config.top_right_corner_rect.to_type<int>();
+    auto const& bottom_right_corner_rect = shadow_config.bottom_right_corner_rect.to_type<int>();
+    auto const& bottom_left_corner_rect = shadow_config.bottom_left_corner_rect.to_type<int>();
+
+    auto const& blurred_edge_thickness = shadow_config.blurred_edge_thickness.value();
+
+    auto& painter = this->painter();
+
+    dbgln(">blurred_edge_thickness: {}", blurred_edge_thickness);
+
+    auto const& shadow_bitmap_rect = shadow_config.shadow_bitmap_rect.to_type<int>();
+
+    auto paint_shadow_infill = [&] {
+//        if (!params.border_radii.has_any_radius()) {
+//            dbgln(">>>paint_shadow_infill: no border radii inner_bounding_rect=({})", inner_bounding_rect);
+//            return painter.fill_rect(inner_bounding_rect.to_type<int>(), box_shadow_data.color);
+//        }
+
+        auto top_left_inner_width = top_left_corner_rect.width() - blurred_edge_thickness;
+        auto top_left_inner_height = top_left_corner_rect.height() - blurred_edge_thickness;
+        auto top_right_inner_width = top_right_corner_rect.width() - blurred_edge_thickness;
+        auto top_right_inner_height = top_right_corner_rect.height() - blurred_edge_thickness;
+        auto bottom_right_inner_width = bottom_right_corner_rect.width() - blurred_edge_thickness;
+        auto bottom_right_inner_height = bottom_right_corner_rect.height() - blurred_edge_thickness;
+        auto bottom_left_inner_width = bottom_left_corner_rect.width() - blurred_edge_thickness;
+        auto bottom_left_inner_height = bottom_left_corner_rect.height() - blurred_edge_thickness;
+
+        Gfx::IntRect const top_rect {
+            inner_bounding_rect.x() + top_left_inner_width,
+            inner_bounding_rect.y(),
+            inner_bounding_rect.width() - top_left_inner_width - top_right_inner_width,
+            top_left_inner_height
+        };
+        Gfx::IntRect const right_rect {
+            inner_bounding_rect.x() + inner_bounding_rect.width() - top_right_inner_width,
+            inner_bounding_rect.y() + top_right_inner_height,
+            top_right_inner_width,
+            inner_bounding_rect.height() - top_right_inner_height - bottom_right_inner_height
+        };
+        Gfx::IntRect const bottom_rect {
+            inner_bounding_rect.x() + bottom_left_inner_width,
+            inner_bounding_rect.y() + inner_bounding_rect.height() - bottom_right_inner_height,
+            inner_bounding_rect.width() - bottom_left_inner_width - bottom_right_inner_width,
+            bottom_right_inner_height
+        };
+        Gfx::IntRect const left_rect {
+            inner_bounding_rect.x(),
+            inner_bounding_rect.y() + top_left_inner_height,
+            bottom_left_inner_width,
+            inner_bounding_rect.height() - top_left_inner_height - bottom_left_inner_height
+        };
+        Gfx::IntRect const inner = {
+            left_rect.x() + left_rect.width(),
+            left_rect.y(),
+            inner_bounding_rect.width() - left_rect.width() - right_rect.width(),
+            inner_bounding_rect.height() - top_rect.height() - bottom_rect.height()
+        };
+
+        painter.fill_rect(top_rect, box_shadow_data.color);
+        painter.fill_rect(right_rect, box_shadow_data.color);
+        painter.fill_rect(bottom_rect, box_shadow_data.color);
+        painter.fill_rect(left_rect, box_shadow_data.color);
+        painter.fill_rect(inner, box_shadow_data.color);
+    };
+
+    paint_shadow_infill();
+
+    auto shadow_canvas = AccelGfx::Canvas::create(shadow_bitmap_rect.size());
+    auto shadow_painter = AccelGfx::Painter::create(m_context, shadow_canvas);
+    shadow_painter->clear(params.box_shadow_data.color.with_alpha(0));
+
+    auto top_left_shadow_corner = AccelGfx::Painter::CornerRadius { (float)shadow_config.top_left_shadow_corner.horizontal_radius, (float)shadow_config.top_left_shadow_corner.vertical_radius };
+    auto top_right_shadow_corner = AccelGfx::Painter::CornerRadius { (float)shadow_config.top_right_shadow_corner.horizontal_radius, (float)shadow_config.top_right_shadow_corner.vertical_radius };
+    auto bottom_right_shadow_corner = AccelGfx::Painter::CornerRadius { (float)shadow_config.bottom_right_shadow_corner.horizontal_radius, (float)shadow_config.bottom_right_shadow_corner.vertical_radius };
+    auto bottom_left_shadow_corner = AccelGfx::Painter::CornerRadius { (float)shadow_config.bottom_left_shadow_corner.horizontal_radius, (float)shadow_config.bottom_left_shadow_corner.vertical_radius };
+
+    auto const& double_radius = shadow_config.double_radius.value();
+
+    shadow_painter->fill_rect_with_rounded_corners(
+        shadow_bitmap_rect.shrunken(double_radius, double_radius, double_radius, double_radius),
+        params.box_shadow_data.color, top_left_shadow_corner, top_right_shadow_corner, bottom_right_shadow_corner, bottom_left_shadow_corner);
+
+    auto shadow_texture = shadow_canvas->framebuffer().texture;
+
+    auto horizontal_blurred_shadow_canvas = AccelGfx::Canvas::create(shadow_bitmap_rect.size());
+    auto horizontal_blurred_shadow_painter = AccelGfx::Painter::create(m_context, horizontal_blurred_shadow_canvas);
+    horizontal_blurred_shadow_painter->clear(params.box_shadow_data.color.with_alpha(0));
+    horizontal_blurred_shadow_painter->blit_blurred_texture(shadow_bitmap_rect.to_type<float>(), shadow_texture, shadow_bitmap_rect.to_type<float>(), shadow_config.blur_radius.value(), AccelGfx::Painter::BlurDirection::Horizontal);
+
+    auto vertical_blurred_shadow_canvas = AccelGfx::Canvas::create(shadow_bitmap_rect.size());
+    auto vertical_blurred_shadow_painter = AccelGfx::Painter::create(m_context, vertical_blurred_shadow_canvas);
+    vertical_blurred_shadow_painter->clear(params.box_shadow_data.color.with_alpha(0));
+    vertical_blurred_shadow_painter->blit_blurred_texture(shadow_bitmap_rect.to_type<float>(), horizontal_blurred_shadow_canvas->framebuffer().texture, shadow_bitmap_rect.to_type<float>(), shadow_config.blur_radius.value(), AccelGfx::Painter::BlurDirection::Vertical);
+
+    auto blurred_shadow_texture = vertical_blurred_shadow_canvas->framebuffer().texture;
+
+    auto const& bottom_right_corner_size = shadow_config.bottom_right_corner_size.to_type<int>();
+    auto const& bottom_left_corner_size = shadow_config.bottom_left_corner_size.to_type<int>();
+    auto bottom_start = shadow_config.bottom_start.value();
+    auto bottom_edge_rect = shadow_config.bottom_edge_rect.to_type<int>();
+    for (auto x = inner_bounding_rect.left() + (bottom_left_corner_size.width() - double_radius); x < inner_bounding_rect.right() - (bottom_right_corner_size.width() - double_radius); ++x) {
+        painter.blit_scaled_texture(Gfx::FloatRect { { x, bottom_start },  bottom_edge_rect.size() }, blurred_shadow_texture, bottom_edge_rect.to_type<float>(), to_accelgfx_scaling_mode(Gfx::Painter::ScalingMode::NearestNeighbor));
+    }
+
+    auto top_start = shadow_config.top_start.value();
+    auto top_edge_rect = shadow_config.top_edge_rect.to_type<int>();
+    auto top_left_corner_size = shadow_config.top_left_corner_size.to_type<int>();
+    auto top_right_corner_size = shadow_config.top_right_corner_size.to_type<int>();
+    for (auto x = inner_bounding_rect.left() + (top_left_corner_size.width() - double_radius); x < inner_bounding_rect.right() - (top_right_corner_size.width() - double_radius); ++x) {
+        painter.blit_scaled_texture(Gfx::FloatRect { { x, top_start },  top_edge_rect.size() }, blurred_shadow_texture, top_edge_rect.to_type<float>(), to_accelgfx_scaling_mode(Gfx::Painter::ScalingMode::NearestNeighbor));
+    }
+
+    auto left_start = shadow_config.left_start.value();
+    auto left_edge_rect = shadow_config.left_edge_rect.to_type<int>();
+    for (auto y = inner_bounding_rect.top() + (top_left_corner_size.height() - double_radius); y < inner_bounding_rect.bottom() - (bottom_left_corner_size.height() - double_radius); ++y) {
+        painter.blit_scaled_texture(Gfx::FloatRect { { left_start, y },  left_edge_rect.size() }, blurred_shadow_texture, left_edge_rect.to_type<float>(), to_accelgfx_scaling_mode(Gfx::Painter::ScalingMode::NearestNeighbor));
+    }
+
+    auto right_start = shadow_config.right_start.value();
+    auto right_edge_rect = shadow_config.right_edge_rect.to_type<int>();
+    for (auto y = inner_bounding_rect.top() + (top_right_corner_size.height() - double_radius); y < inner_bounding_rect.bottom() - (bottom_right_corner_size.height() - double_radius); ++y) {
+        painter.blit_scaled_texture(Gfx::FloatRect { { right_start, y },  right_edge_rect.size() }, blurred_shadow_texture, right_edge_rect.to_type<float>(), to_accelgfx_scaling_mode(Gfx::Painter::ScalingMode::NearestNeighbor));
+    }
+
+    auto top_left_corner_blit_pos = shadow_config.top_left_corner_blit_pos.to_type<int>();
+    auto top_right_corner_blit_pos = shadow_config.top_right_corner_blit_pos.to_type<int>();
+    auto bottom_right_corner_blit_pos = shadow_config.bottom_right_corner_blit_pos.to_type<int>();
+    auto bottom_left_corner_blit_pos = shadow_config.bottom_left_corner_blit_pos.to_type<int>();
+
+    painter.blit_scaled_texture(Gfx::FloatRect { top_left_corner_blit_pos,  top_left_corner_rect.size() }, blurred_shadow_texture, top_left_corner_rect.to_type<float>(), to_accelgfx_scaling_mode(Gfx::Painter::ScalingMode::NearestNeighbor));
+    painter.blit_scaled_texture(Gfx::FloatRect { top_right_corner_blit_pos,  top_right_corner_rect.size() }, blurred_shadow_texture, top_right_corner_rect.to_type<float>(), to_accelgfx_scaling_mode(Gfx::Painter::ScalingMode::NearestNeighbor));
+    painter.blit_scaled_texture(Gfx::FloatRect { bottom_left_corner_blit_pos,  bottom_left_corner_rect.size() }, blurred_shadow_texture, bottom_left_corner_rect.to_type<float>(), to_accelgfx_scaling_mode(Gfx::Painter::ScalingMode::NearestNeighbor));
+    painter.blit_scaled_texture(Gfx::FloatRect { bottom_right_corner_blit_pos,  bottom_right_corner_rect.size() }, blurred_shadow_texture, bottom_right_corner_rect.to_type<float>(), to_accelgfx_scaling_mode(Gfx::Painter::ScalingMode::NearestNeighbor));
+
     // FIXME
     return CommandResult::Continue;
 }

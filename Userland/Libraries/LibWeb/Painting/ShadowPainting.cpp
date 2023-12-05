@@ -72,46 +72,7 @@ void paint_inner_box_shadow(Gfx::Painter& painter, PaintOuterBoxShadowParams par
         *shadow_bitmap, shadow_bitmap->rect(), params.box_shadow_data.color.alpha() / 255.);
 }
 
-struct OuterBoxShadowMetrics {
-    DevicePixelRect shadow_bitmap_rect;
-    DevicePixelRect non_blurred_shadow_rect;
-    DevicePixelRect inner_bounding_rect;
-    DevicePixels blurred_edge_thickness;
-    DevicePixels double_radius;
-    DevicePixels blur_radius;
-
-    DevicePixelRect top_left_corner_rect;
-    DevicePixelRect top_right_corner_rect;
-    DevicePixelRect bottom_right_corner_rect;
-    DevicePixelRect bottom_left_corner_rect;
-
-    DevicePixelPoint top_left_corner_blit_pos;
-    DevicePixelPoint top_right_corner_blit_pos;
-    DevicePixelPoint bottom_right_corner_blit_pos;
-    DevicePixelPoint bottom_left_corner_blit_pos;
-
-    DevicePixelSize top_left_corner_size;
-    DevicePixelSize top_right_corner_size;
-    DevicePixelSize bottom_right_corner_size;
-    DevicePixelSize bottom_left_corner_size;
-
-    DevicePixels left_start;
-    DevicePixels top_start;
-    DevicePixels right_start;
-    DevicePixels bottom_start;
-
-    DevicePixelRect left_edge_rect;
-    DevicePixelRect right_edge_rect;
-    DevicePixelRect top_edge_rect;
-    DevicePixelRect bottom_edge_rect;
-
-    CornerRadius top_left_shadow_corner;
-    CornerRadius top_right_shadow_corner;
-    CornerRadius bottom_right_shadow_corner;
-    CornerRadius bottom_left_shadow_corner;
-};
-
-static OuterBoxShadowMetrics get_outer_box_shadow_configuration(PaintOuterBoxShadowParams params)
+OuterBoxShadowMetrics get_outer_box_shadow_configuration(PaintOuterBoxShadowParams params)
 {
     auto device_content_rect = params.device_content_rect;
 
@@ -365,10 +326,17 @@ void paint_outer_box_shadow(Gfx::Painter& painter, PaintOuterBoxShadowParams par
     };
 
     // If there's no blurring, nor rounded corners, we can save a lot of effort.
-    if (blur_radius == 0 && !border_radii.has_any_radius()) {
-        fill_rect_masked(painter, non_blurred_shadow_rect.translated(offset_x, offset_y), device_content_rect, box_shadow_data.color);
-        return;
-    }
+    (void)border_radii;
+    (void)offset_x;
+    (void)offset_y;
+    (void)non_blurred_shadow_rect;
+    (void)fill_rect_masked;
+
+//    if (blur_radius == 0 && !border_radii.has_any_radius()) {
+//        dbgln(">>> No blur or border radii, painting simple box-shadow");
+//        fill_rect_masked(painter, non_blurred_shadow_rect.translated(offset_x, offset_y), device_content_rect, box_shadow_data.color);
+//        return;
+//    }
 
     auto paint_shadow_infill = [&] {
         if (!params.border_radii.has_any_radius())

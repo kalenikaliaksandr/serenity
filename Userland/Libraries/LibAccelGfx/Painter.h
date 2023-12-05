@@ -105,6 +105,10 @@ public:
 
     void update_immutable_bitmap_texture_cache(HashMap<u32, Gfx::ImmutableBitmap const*>&);
 
+    void blit_blurred_texture(Gfx::FloatRect const& dst_rect, GL::Texture const&, Gfx::FloatRect const& src_rect, int radius, BlurDirection direction, ScalingMode = ScalingMode::NearestNeighbor);
+
+    void blit_scaled_texture(Gfx::FloatRect const& dst_rect, GL::Texture const&, Gfx::FloatRect const& src_rect, ScalingMode, float opacity = 1.0f, Optional<Gfx::AffineTransform> affine_transform = {}, BlendingMode = BlendingMode::AlphaAdd);
+
 private:
     Context& m_context;
 
@@ -116,8 +120,8 @@ private:
     [[nodiscard]] State& state() { return m_state_stack.last(); }
     [[nodiscard]] State const& state() const { return m_state_stack.last(); }
 
-    void blit_scaled_texture(Gfx::FloatRect const& dst_rect, GL::Texture const&, Gfx::FloatRect const& src_rect, ScalingMode, float opacity = 1.0f, Optional<Gfx::AffineTransform> affine_transform = {}, BlendingMode = BlendingMode::AlphaAdd);
-    void blit_blurred_texture(Gfx::FloatRect const& dst_rect, GL::Texture const&, Gfx::FloatRect const& src_rect, int radius, BlurDirection direction, ScalingMode = ScalingMode::NearestNeighbor);
+//    void blit_scaled_texture(Gfx::FloatRect const& dst_rect, GL::Texture const&, Gfx::FloatRect const& src_rect, ScalingMode, float opacity = 1.0f, Optional<Gfx::AffineTransform> affine_transform = {}, BlendingMode = BlendingMode::AlphaAdd);
+//    void blit_blurred_texture(Gfx::FloatRect const& dst_rect, GL::Texture const&, Gfx::FloatRect const& src_rect, int radius, BlurDirection direction, ScalingMode = ScalingMode::NearestNeighbor);
     void bind_target_canvas();
 
     [[nodiscard]] Gfx::FloatRect to_clip_space(Gfx::FloatRect const& screen_rect) const;
