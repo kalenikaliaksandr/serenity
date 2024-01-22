@@ -8,6 +8,8 @@
 #include <LibGfx/Bitmap.h>
 #include <LibWeb/WebGL/OpenGLContext.h>
 
+#define GL_GLEXT_PROTOTYPES
+
 #ifdef HAS_ACCELERATED_GRAPHICS
 #    include <LibAccelGfx/Canvas.h>
 #    include <LibAccelGfx/Context.h>
@@ -27,9 +29,12 @@ public:
 
     virtual void present(Gfx::Bitmap& bitmap) override
     {
+        activate();
+        dbgln(">VERSION: {}", (char*)glGetString(GL_VERSION));
         VERIFY(bitmap.format() == Gfx::BitmapFormat::BGRA8888);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glReadPixels(0, 0, bitmap.width(), bitmap.height(), GL_BGRA, GL_UNSIGNED_BYTE, bitmap.scanline(0));
+        VERIFY(glGetError() == GL_NO_ERROR);
     }
 
     virtual GLenum gl_get_error() override
@@ -83,7 +88,11 @@ public:
     virtual void gl_viewport(GLint x, GLint y, GLsizei width, GLsizei height) override
     {
         activate();
+        dbgln(">>>glViewport: x={}, y={}, width={}, height={}", x, y, width, height);
         glViewport(x, y, width, height);
+
+        //        glEnable(GL_PROGRAM_POINT_SIZE);
+        //        VERIFY(glGetError() == GL_NO_ERROR);
     }
 
     virtual void gl_line_width(GLfloat width) override
@@ -155,6 +164,177 @@ public:
     virtual void gl_stencil_op_separate(GLenum, GLenum, GLenum, GLenum) override
     {
         TODO();
+    }
+
+    virtual GLuint gl_create_shader(GLenum shader_type) override
+    {
+        activate();
+
+        GLenum type;
+        switch (shader_type) {
+        case FRAGMENT_SHADER:
+            dbgln(">>>fragment shader");
+            type = GL_FRAGMENT_SHADER;
+            break;
+        case VERTEX_SHADER:
+            dbgln(">>>vertex shader");
+            type = GL_VERTEX_SHADER;
+            break;
+        default:
+            // FIXME: That is wrong
+            VERIFY_NOT_REACHED();
+        }
+        return glCreateShader(type);
+    }
+
+    virtual void gl_shader_source(GLuint shader, GLsizei count, GLchar const** string, GLint const* length) override
+    {
+        activate();
+        dbgln(">>>shader source: ({})", string[0]);
+        glShaderSource(shader, count, string, length);
+
+        GLchar str[513];
+        GLint len = 0;
+        glGetShaderSource(shader, 512, &len, str);
+        StringView view(str, len);
+        dbgln("!!!!!!!!!!!!!!!!!!!!!11shader source: ({})", view);
+        // FIXME:
+        VERIFY(glGetError() == GL_NO_ERROR);
+    }
+
+    virtual void gl_compile_shader(GLuint shader) override
+    {
+        activate();
+        glCompileShader(shader);
+        int success = false;
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            char buffer[512];
+            glGetShaderInfoLog(shader, sizeof(buffer), nullptr, buffer);
+            dbgln("GLSL shader compilation failed: {}", buffer);
+            VERIFY_NOT_REACHED();
+        }
+        VERIFY(glGetError() == GL_NO_ERROR);
+        dbgln(">>>after glCompileShader");
+    }
+
+    virtual GLuint gl_create_program() override
+    {
+        activate();
+        return glCreateProgram();
+    }
+
+    virtual void gl_attach_shader(GLuint program, GLuint shader) override
+    {
+        activate();
+        glAttachShader(program, shader);
+        VERIFY(glGetError() == GL_NO_ERROR);
+        dbgln(">>>after glAttachShader program={}, shader={}", program, shader);
+    }
+
+    virtual void gl_link_program(GLuint program) override
+    {
+        activate();
+        glLinkProgram(program);
+        int linked;
+        glGetProgramiv(program, GL_LINK_STATUS, &linked);
+        if (!linked) {
+            char buffer[512];
+            glGetProgramInfoLog(program, sizeof(buffer), nullptr, buffer);
+            dbgln("GLSL program linking failed: {}", buffer);
+            VERIFY_NOT_REACHED();
+        }
+        VERIFY(glGetError() == GL_NO_ERROR);
+        dbgln(">>>after glLinkProgram");
+    }
+
+    virtual void gl_use_program(GLuint program) override
+    {
+        activate();
+        (void)program;
+        dbgln(">>>use program={}", program);
+        glUseProgram(program);
+        VERIFY(glGetError() == GL_NO_ERROR);
+        dbgln(">>>after glUseProgram");
+    }
+
+    virtual GLuint gl_get_attrib_location(GLuint program, GLchar const* name) override
+    {
+        activate();
+        auto result = glGetAttribLocation(program, name);
+        VERIFY(glGetError() == GL_NO_ERROR);
+        dbgln(">>>after glGetAttribLocation program={}, name={}", program, name);
+        return result;
+    }
+
+    virtual void gl_vertex_attrib_3f(GLuint index, GLfloat x, GLfloat y, GLfloat z) override
+    {
+        activate();
+        glVertexAttrib3f(0, 0, 0, 0);
+        VERIFY(glGetError() == GL_NO_ERROR);
+        dbgln(">>>after glVertexAttrib3f index={}, x={}, y={}, z={}", index, x, y, z);
+    }
+
+    virtual void gl_draw_arrays(GLenum mode, GLint first, GLsizei count) override
+    {
+        activate();
+        (void)mode;
+        (void)first;
+        (void)count;
+        VERIFY(glGetError() == GL_NO_ERROR);
+        //        glViewport(0, 0, 100, 100);
+        glEnableVertexAttribArray(0);
+        glDisable(GL_SCISSOR_TEST);
+        //        glEnable(GL_PROGRAM_POINT_SIZE);
+        VERIFY(glGetError() == GL_NO_ERROR);
+
+        GLint currentProgram = 0;
+        glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
+        dbgln(">>>glGetIntegerv(GL_CURRENT_PROGRAM)={}", currentProgram);
+        //        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //        glDrawArrays(GL_POINTS, 0, 1);
+
+        GLfloat vertices[] = {
+            0.0f, 0.5f, 0.0f,   // Vertice #1
+            -0.5f, -0.5f, 0.0f, // Vertice #2
+            0.5f, -0.5f, 0.0f   // Vertice #3
+        };
+
+        GLuint VBO, VAO;
+
+        // Generate and bind the Vertex Array Object
+        glGenVertexArrays(1, &VAO);
+        glBindVertexArray(VAO);
+
+        // Generate and bind the Vertex Buffer Object
+        glGenBuffers(1, &VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+        // Copy vertex data to the VBO
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        // Define vertex attribute pointers
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        // Unbind the VBO (optional, but recommended)
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        // Unbind the VAO (optional, but recommended)
+        glBindVertexArray(0);
+
+        // When drawing
+        // Bind the VAO
+        glBindVertexArray(VAO);
+
+        // Draw the vertices
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        // Unbind the VAO (optional)
+        glBindVertexArray(0);
+
+        VERIFY(glGetError() == GL_NO_ERROR);
+        dbgln(">>>after glDrawArrays");
     }
 
     AccelGfxContext(OwnPtr<AccelGfx::Context> context, NonnullRefPtr<AccelGfx::Canvas> canvas)

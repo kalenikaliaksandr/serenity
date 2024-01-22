@@ -1,0 +1,5 @@
+#import <WebGL/WebGLObject.idl>
+
+[Exposed=(Window,Worker)]
+interface WebGLProgram : WebGLObject {
+};

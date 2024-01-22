@@ -64,10 +64,15 @@ private:
 static NonnullOwnPtr<CGLContextWrapper> make_context_cgl()
 {
     CGLContextObj context = NULL;
-    CGLPixelFormatAttribute attributes[4] = {
-        kCGLPFAOpenGLProfile,
-        (CGLPixelFormatAttribute)kCGLOGLPVersion_3_2_Core,
+    //    CGLPixelFormatAttribute attributes[4] = {
+    //        kCGLPFAOpenGLProfile,
+    //        (CGLPixelFormatAttribute)kCGLOGLPVersion_3_2_Core,
+    //        kCGLPFAAccelerated,
+    //        (CGLPixelFormatAttribute)0
+    //    };
+    CGLPixelFormatAttribute attributes[3] = {
         kCGLPFAAccelerated,
+        kCGLPFADoubleBuffer,
         (CGLPixelFormatAttribute)0
     };
 
@@ -101,7 +106,8 @@ static NonnullOwnPtr<EGLContextWrapper> make_context_egl()
     EGLint minor;
     eglInitialize(egl_display, &major, &minor);
 
-    EGLBoolean ok = eglBindAPI(EGL_OPENGL_API);
+    //    EGLBoolean ok = eglBindAPI(EGL_OPENGL_API);
+    EGLBoolean ok = eglBindAPI(EGL_OPENGL_ES_API);
     if (ok == EGL_FALSE) {
         dbgln("eglBindAPI failed");
         VERIFY_NOT_REACHED();
@@ -122,8 +128,7 @@ static NonnullOwnPtr<EGLContextWrapper> make_context_egl()
     eglChooseConfig(egl_display, config_attributes, &egl_config, 1, &num_configs);
 
     static EGLint const context_attributes[] = {
-        EGL_CONTEXT_MAJOR_VERSION, 3,
-        EGL_CONTEXT_MINOR_VERSION, 3,
+        EGL_CONTEXT_CLIENT_VERSION, 2,
         EGL_NONE
     };
     EGLContext egl_context = eglCreateContext(egl_display, egl_config, EGL_NO_CONTEXT, context_attributes);

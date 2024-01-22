@@ -1,5 +1,8 @@
 #import <HTML/HTMLCanvasElement.idl>
 #import <WebGL/Types.idl>
+#import <WebGL/WebGLProgram.idl>
+#import <WebGL/WebGLShader.idl>
+#import <WebGL/WebGLBuffer.idl>
 
 dictionary WebGLContextAttributes {
     boolean alpha = true;
@@ -29,33 +32,54 @@ interface mixin WebGLRenderingContextBase {
     object? getExtension(DOMString name);
 
     undefined activeTexture(GLenum texture);
+    undefined attachShader(WebGLProgram program, WebGLShader shader);
+    undefined bindBuffer(GLenum target, WebGLBuffer? buffer);
 
     undefined clear(GLbitfield mask);
     undefined clearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
     undefined clearDepth(GLclampf depth);
     undefined clearStencil(GLint s);
     undefined colorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
+    undefined compileShader(WebGLShader shader);
+
+    WebGLBuffer? createBuffer();
+    WebGLProgram? createProgram();
+    WebGLShader? createShader(GLenum type);
 
     undefined cullFace(GLenum mode);
 
     undefined depthFunc(GLenum func);
     undefined depthMask(GLboolean flag);
     undefined depthRange(GLclampf zNear, GLclampf zFar);
+    undefined drawArrays(GLenum mode, GLint first, GLsizei count);
 
     undefined finish();
     undefined flush();
 
     undefined frontFace(GLenum mode);
 
+    GLint getAttribLocation(WebGLProgram program, DOMString name);
+
     GLenum getError();
 
+    any getProgramParameter(WebGLProgram program, GLenum pname);
+    any getShaderParameter(WebGLShader shader, GLenum pname);
+    DOMString? getShaderInfoLog(WebGLShader shader);
+
     undefined lineWidth(GLfloat width);
+    undefined linkProgram(WebGLProgram program);
     undefined polygonOffset(GLfloat factor, GLfloat units);
 
     undefined scissor(GLint x, GLint y, GLsizei width, GLsizei height);
 
+    undefined shaderSource(WebGLShader shader, DOMString source);
+
     undefined stencilOp(GLenum fail, GLenum zfail, GLenum zpass);
     undefined stencilOpSeparate(GLenum face, GLenum fail, GLenum zfail, GLenum zpass);
+
+    undefined useProgram(WebGLProgram? program);
+
+    undefined vertexAttrib3f(GLuint index, GLfloat x, GLfloat y, GLfloat z);
 
     undefined viewport(GLint x, GLint y, GLsizei width, GLsizei height);
 

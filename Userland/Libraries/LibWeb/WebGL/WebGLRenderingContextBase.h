@@ -14,7 +14,10 @@
 #include <LibWeb/Bindings/PlatformObject.h>
 #include <LibWeb/Forward.h>
 #include <LibWeb/WebGL/OpenGLContext.h>
+#include <LibWeb/WebGL/WebGLBuffer.h>
 #include <LibWeb/WebGL/WebGLContextAttributes.h>
+#include <LibWeb/WebGL/WebGLProgram.h>
+#include <LibWeb/WebGL/WebGLShader.h>
 
 namespace Web::WebGL {
 
@@ -36,18 +39,32 @@ public:
     JS::Object* get_extension(String const& name) const;
 
     void active_texture(GLenum texture);
+    void attach_shader(JS::NonnullGCPtr<WebGLProgram> program, JS::NonnullGCPtr<WebGLShader> shader) const;
+    void bind_buffer(GLenum target, JS::GCPtr<WebGLBuffer> buffer) const;
 
     void clear(GLbitfield mask);
     void clear_color(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
     void clear_depth(GLclampf depth);
     void clear_stencil(GLint s);
     void color_mask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
+    void compile_shader(JS::NonnullGCPtr<WebGLShader> shader) const;
+
+    GLint get_attrib_location(JS::NonnullGCPtr<WebGLProgram> program, String const& name) const;
+
+    Optional<String> get_shader_info_log(JS::NonnullGCPtr<WebGLShader> shader) const;
+    WebIDL::ExceptionOr<JS::Value> get_program_parameter(JS::NonnullGCPtr<WebGLProgram> program, GLenum pname) const;
+    WebIDL::ExceptionOr<JS::Value> get_shader_parameter(JS::NonnullGCPtr<WebGLShader> shader, GLenum pname) const;
+
+    JS::GCPtr<WebGLBuffer> create_buffer();
+    JS::GCPtr<WebGLProgram> create_program();
+    JS::GCPtr<WebGLShader> create_shader(GLenum type);
 
     void cull_face(GLenum mode);
 
     void depth_func(GLenum func);
     void depth_mask(GLboolean mask);
     void depth_range(GLclampf z_near, GLclampf z_far);
+    void draw_arrays(GLenum mode, GLint first, GLsizei count);
 
     void finish();
     void flush();
@@ -57,12 +74,19 @@ public:
     GLenum get_error();
 
     void line_width(GLfloat width);
+    void link_program(JS::NonnullGCPtr<WebGLProgram> program) const;
     void polygon_offset(GLfloat factor, GLfloat units);
 
     void scissor(GLint x, GLint y, GLsizei width, GLsizei height);
 
+    void shader_source(JS::NonnullGCPtr<WebGLShader> shader, String const& source) const;
+
     void stencil_op(GLenum fail, GLenum zfail, GLenum zpass);
     void stencil_op_separate(GLenum face, GLenum fail, GLenum zfail, GLenum zpass);
+
+    void use_program(JS::GCPtr<WebGLProgram> program) const;
+
+    void vertex_attrib3f(GLuint index, GLfloat x, GLfloat y, GLfloat z) const;
 
     void viewport(GLint x, GLint y, GLsizei width, GLsizei height);
 

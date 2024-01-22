@@ -6,12 +6,13 @@
 
 #pragma once
 
+#include <AK/Weakable.h>
 #include <LibGfx/Bitmap.h>
 #include <LibWeb/WebGL/Types.h>
 
 namespace Web::WebGL {
 
-class OpenGLContext {
+class OpenGLContext : public Weakable<OpenGLContext> {
 public:
     static OwnPtr<OpenGLContext> create(Gfx::Bitmap&);
 
@@ -39,6 +40,16 @@ public:
     virtual void gl_finish() = 0;
     virtual void gl_flush() = 0;
     virtual void gl_stencil_op_separate(GLenum, GLenum, GLenum, GLenum) = 0;
+    virtual GLuint gl_create_shader(GLenum shader_type) = 0;
+    virtual void gl_shader_source(GLuint shader, GLsizei count, GLchar const** string, GLint const* length) = 0;
+    virtual void gl_compile_shader(GLuint shader) = 0;
+    virtual GLuint gl_create_program() = 0;
+    virtual void gl_attach_shader(GLuint program, GLuint shader) = 0;
+    virtual void gl_link_program(GLuint program) = 0;
+    virtual void gl_use_program(GLuint program) = 0;
+    virtual GLuint gl_get_attrib_location(GLuint program, GLchar const* name) = 0;
+    virtual void gl_vertex_attrib_3f(GLuint index, GLfloat x, GLfloat y, GLfloat z) = 0;
+    virtual void gl_draw_arrays(GLenum mode, GLint first, GLsizei count) = 0;
 
     virtual ~OpenGLContext() { }
 };

@@ -2,6 +2,7 @@ typedef unsigned long GLenum;
 typedef boolean GLboolean;
 typedef unsigned long GLbitfield;
 typedef long GLint;
+typedef unsigned long GLuint;
 typedef long GLsizei;
 
 typedef unrestricted float GLfloat;

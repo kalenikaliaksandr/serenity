@@ -9,6 +9,7 @@
 #include <LibWeb/HTML/HTMLCanvasElement.h>
 #include <LibWeb/Layout/Node.h>
 #include <LibWeb/Painting/Paintable.h>
+#include <LibWeb/WebGL/Types.h>
 #include <LibWeb/WebGL/WebGLRenderingContextBase.h>
 
 namespace Web::WebGL {
@@ -47,6 +48,8 @@ void WebGLRenderingContextBase::present()
     if (!m_should_present)
         return;
 
+    dbgln(">>>>present()");
+
     m_should_present = false;
 
     // "Before the drawing buffer is presented for compositing the implementation shall ensure that all rendering operations have been flushed to the drawing buffer."
@@ -58,9 +61,9 @@ void WebGLRenderingContextBase::present()
     // "By default, after compositing the contents of the drawing buffer shall be cleared to their default values, as shown in the table above.
     // This default behavior can be changed by setting the preserveDrawingBuffer attribute of the WebGLContextAttributes object.
     // If this flag is true, the contents of the drawing buffer shall be preserved until the author either clears or overwrites them."
-    if (!m_context_creation_parameters.preserve_drawing_buffer) {
-        m_context->clear_buffer_to_default_values();
-    }
+    //    if (!m_context_creation_parameters.preserve_drawing_buffer) {
+    //        m_context->clear_buffer_to_default_values();
+    //    }
 }
 
 HTML::HTMLCanvasElement& WebGLRenderingContextBase::canvas_element()
@@ -133,6 +136,20 @@ void WebGLRenderingContextBase::active_texture(GLenum texture)
     m_context->gl_active_texture(texture);
 }
 
+void WebGLRenderingContextBase::attach_shader(JS::NonnullGCPtr<WebGLProgram> program, JS::NonnullGCPtr<WebGLShader> shader) const
+{
+    if (m_context_lost)
+        return;
+
+    program->attach_shader(shader);
+}
+
+void WebGLRenderingContextBase::bind_buffer(GLenum target, JS::GCPtr<WebGLBuffer> buffer) const
+{
+    (void)target;
+    (void)buffer;
+}
+
 void WebGLRenderingContextBase::clear(GLbitfield mask)
 {
     if (m_context_lost)
@@ -181,6 +198,69 @@ void WebGLRenderingContextBase::color_mask(GLboolean red, GLboolean green, GLboo
     m_context->gl_color_mask(red, green, blue, alpha);
 }
 
+void WebGLRenderingContextBase::compile_shader(JS::NonnullGCPtr<WebGLShader> shader) const
+{
+    if (m_context_lost)
+        return;
+
+    dbgln(">>>WebGLRenderingContextBase::compile_shader");
+    shader->compile();
+}
+
+GLint WebGLRenderingContextBase::get_attrib_location(JS::NonnullGCPtr<WebGLProgram> program, String const& name) const
+{
+    auto result = program->get_attrib_location(name);
+    dbgln("*********get_attrib_location(name='{}') -> {}", name, result);
+    return program->get_attrib_location(name);
+}
+
+Optional<String> WebGLRenderingContextBase::get_shader_info_log(JS::NonnullGCPtr<WebGLShader> shader) const
+{
+    (void)shader;
+    return {};
+}
+
+WebIDL::ExceptionOr<JS::Value> WebGLRenderingContextBase::get_program_parameter(JS::NonnullGCPtr<WebGLProgram> program, GLenum pname) const
+{
+    VERIFY_NOT_REACHED();
+    (void)program;
+    (void)pname;
+    return JS::js_null();
+}
+
+WebIDL::ExceptionOr<JS::Value> WebGLRenderingContextBase::get_shader_parameter(JS::NonnullGCPtr<WebGLShader> shader, GLenum pname) const
+{
+    VERIFY_NOT_REACHED();
+    (void)shader;
+    (void)pname;
+    return JS::js_null();
+}
+
+JS::GCPtr<WebGLBuffer> WebGLRenderingContextBase::create_buffer()
+{
+    return heap().allocate_without_realm<WebGLBuffer>(realm(), m_context->make_weak_ptr());
+}
+
+JS::GCPtr<WebGLProgram> WebGLRenderingContextBase::create_program()
+{
+    if (m_context_lost)
+        return nullptr;
+
+    auto program = m_context->gl_create_program();
+    dbgln(">>>program=({})", program);
+    return heap().allocate_without_realm<WebGLProgram>(realm(), m_context->make_weak_ptr(), program);
+}
+
+JS::GCPtr<WebGLShader> WebGLRenderingContextBase::create_shader(GLenum type)
+{
+    if (m_context_lost)
+        return nullptr;
+
+    auto shader = m_context->gl_create_shader(type);
+    dbgln(">>>shader=({})", shader);
+    return heap().allocate_without_realm<WebGLShader>(realm(), m_context->make_weak_ptr(), type, shader);
+}
+
 void WebGLRenderingContextBase::cull_face(GLenum mode)
 {
     if (m_context_lost)
@@ -219,6 +299,11 @@ void WebGLRenderingContextBase::depth_range(GLclampf z_near, GLclampf z_far)
     // "The WebGL API does not support depth ranges with where the near plane is mapped to a value greater than that of the far plane. A call to depthRange will generate an INVALID_OPERATION error if zNear is greater than zFar."
     RETURN_WITH_WEBGL_ERROR_IF(z_near > z_far, GL_INVALID_OPERATION);
     m_context->gl_depth_range(z_near, z_far);
+}
+
+void WebGLRenderingContextBase::draw_arrays(GLenum mode, GLint first, GLsizei count)
+{
+    m_context->gl_draw_arrays(mode, first, count);
 }
 
 void WebGLRenderingContextBase::finish()
@@ -277,6 +362,15 @@ void WebGLRenderingContextBase::line_width(GLfloat width)
     m_context->gl_line_width(width);
 }
 
+void WebGLRenderingContextBase::link_program(JS::NonnullGCPtr<WebGLProgram> program) const
+{
+    if (m_context_lost)
+        return;
+
+    dbgln(">>>WebGLRenderingContextBase::link_program");
+    program->link();
+}
+
 void WebGLRenderingContextBase::polygon_offset(GLfloat factor, GLfloat units)
 {
     if (m_context_lost)
@@ -295,6 +389,14 @@ void WebGLRenderingContextBase::scissor(GLint x, GLint y, GLsizei width, GLsizei
     m_context->gl_scissor(x, y, width, height);
 }
 
+void WebGLRenderingContextBase::shader_source(JS::NonnullGCPtr<WebGLShader> shader, String const& source) const
+{
+    if (m_context_lost)
+        return;
+
+    shader->set_source(source);
+}
+
 void WebGLRenderingContextBase::stencil_op(GLenum fail, GLenum zfail, GLenum zpass)
 {
     if (m_context_lost)
@@ -311,6 +413,21 @@ void WebGLRenderingContextBase::stencil_op_separate(GLenum face, GLenum fail, GL
 
     dbgln_if(WEBGL_CONTEXT_DEBUG, "WebGLRenderingContextBase::stencil_op_separate(face=0x{:08x}, fail=0x{:08x}, zfail=0x{:08x}, zpass=0x{:08x})", face, fail, zfail, zpass);
     m_context->gl_stencil_op_separate(face, fail, zfail, zpass);
+}
+
+void WebGLRenderingContextBase::use_program(JS::GCPtr<WebGLProgram> program) const
+{
+    if (m_context_lost)
+        return;
+
+    dbgln(">>>WebGLRenderingContextBase::use_program");
+    program->use();
+}
+
+void WebGLRenderingContextBase::vertex_attrib3f(GLuint index, GLfloat x, GLfloat y, GLfloat z) const
+{
+    dbgln(">>>WebGLRenderingContextBase::vertex_attrib3f");
+    m_context->gl_vertex_attrib_3f(index, x, y, z);
 }
 
 void WebGLRenderingContextBase::viewport(GLint x, GLint y, GLsizei width, GLsizei height)
