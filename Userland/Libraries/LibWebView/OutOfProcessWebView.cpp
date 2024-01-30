@@ -28,7 +28,7 @@ OutOfProcessWebView::OutOfProcessWebView()
     set_should_hide_unnecessary_scrollbars(true);
     set_focus_policy(GUI::FocusPolicy::StrongFocus);
 
-    create_client();
+    initialize_client(CreateNewClient::Yes);
 
     on_did_layout = [this](auto content_size) {
         set_content_size(content_size);
@@ -81,7 +81,7 @@ OutOfProcessWebView::OutOfProcessWebView()
 
 OutOfProcessWebView::~OutOfProcessWebView() = default;
 
-void OutOfProcessWebView::create_client()
+void OutOfProcessWebView::initialize_client(WebView::ViewImplementation::CreateNewClient)
 {
     m_client_state = {};
 

@@ -36,7 +36,7 @@ WebViewBridge::WebViewBridge(Vector<Web::DevicePixelRect> screen_rects, float de
 {
     m_device_pixel_ratio = device_pixel_ratio;
 
-    create_client();
+    initialize_client(CreateNewClient::Yes);
 
     on_scroll_by_delta = [this](auto x_delta, auto y_delta) {
         auto position = m_viewport_rect.location();
@@ -171,7 +171,7 @@ Gfx::IntPoint WebViewBridge::to_widget_position(Gfx::IntPoint content_position) 
     return scale_for_device(content_position, inverse_device_pixel_ratio());
 }
 
-void WebViewBridge::create_client()
+void WebViewBridge::initialize_client(CreateNewClient)
 {
     m_client_state = {};
 
@@ -179,6 +179,7 @@ void WebViewBridge::create_client()
     auto new_client = MUST(launch_web_content_process(*this, candidate_web_content_paths, m_web_content_options));
 
     m_client_state.client = new_client;
+
     m_client_state.client->on_web_content_process_crash = [this] {
         Core::deferred_invoke([this] {
             handle_web_content_process_crash();
