@@ -414,6 +414,7 @@ Navigable::ChosenNavigable Navigable::choose_a_navigable(StringView name, Tokeni
 
             // 7. If noopener is true, then set chosen to the result of creating a new top-level traversable given null and targetName.
             if (no_opener == TokenizedFeature::NoOpener::Yes) {
+
                 // FIXME: This should do something similar to RemoteBrowsingContext -- but RemoteTraversableNavigable instead
                 TODO();
             }
