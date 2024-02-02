@@ -2082,10 +2082,12 @@ void Navigable::paint(Painting::RecordingPainter& recording_painter, PaintConfig
     context.set_should_paint_overlay(config.paint_overlay);
     context.set_has_focus(config.has_focus);
 
-    HashMap<Painting::PaintableBox const*, Painting::ViewportPaintable::ScrollFrame> scroll_frames;
+    HashMap<Painting::PaintableBox const*, Painting::ViewportPaintable::ScrollFrame> scroll_frames_1;
+    Vector<Painting::ViewportPaintable::ScrollFrame> scroll_frames;
     if (is_traversable()) {
-        document->paintable()->assign_scroll_frame_ids(scroll_frames);
-        document->paintable()->assign_clip_rectangles();
+        document->paintable()->assign_scroll_frame_ids(scroll_frames_1);
+        //        document->paintable()->assign_clip_rectangles();
+        document->paintable()->build_paint_property_tree(scroll_frames);
     }
 
     document->paintable()->paint_all_phases(context);
@@ -2094,9 +2096,9 @@ void Navigable::paint(Painting::RecordingPainter& recording_painter, PaintConfig
     if (is_traversable()) {
         Vector<Gfx::IntPoint> scroll_offsets_by_frame_id;
         scroll_offsets_by_frame_id.resize(scroll_frames.size());
-        for (auto [_, scrollable_frame] : scroll_frames) {
-            auto scroll_offset = context.rounded_device_point(scrollable_frame.offset).to_type<int>();
-            scroll_offsets_by_frame_id[scrollable_frame.id] = scroll_offset;
+        for (auto const& scroll_frame : scroll_frames) {
+            auto scroll_offset = context.rounded_device_point(scroll_frame.offset).to_type<int>();
+            scroll_offsets_by_frame_id[scroll_frame.id] = scroll_offset;
         }
         recording_painter.apply_scroll_offsets(scroll_offsets_by_frame_id);
     }

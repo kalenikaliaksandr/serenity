@@ -10,6 +10,7 @@
 #include <LibWeb/Layout/Box.h>
 #include <LibWeb/Layout/LineBox.h>
 #include <LibWeb/Layout/TextNode.h>
+#include <LibWeb/Painting/PaintPropertiesTree.h>
 
 namespace Web::Painting {
 
@@ -187,6 +188,8 @@ public:
     DOM::Document& document() { return layout_node().document(); }
 
     CSSPixelPoint box_type_agnostic_position() const;
+
+    RefPtr<PropertyTreeNode> m_clip_property_node { nullptr };
 
 protected:
     explicit Paintable(Layout::Node const&);

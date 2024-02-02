@@ -193,12 +193,18 @@ public:
 
     Optional<CSSPixelRect> get_clip_rect() const;
 
-    void set_clip_rect(Optional<CSSPixelRect> rect) { m_clip_rect = rect; }
-    void set_scroll_frame_id(int id) { m_scroll_frame_id = id; }
-    void set_enclosing_scroll_frame_offset(CSSPixelPoint offset) { m_enclosing_scroll_frame_offset = offset; }
-    void set_corner_clip_radii(BorderRadiiData const& corner_radii) { m_corner_clip_radii = corner_radii; }
+    //    void set_clip_rect(Optional<CSSPixelRect> rect) { m_clip_rect = rect; }
+    //    void set_scroll_frame_id(int id) { m_scroll_frame_id = id; }
+    //    void set_enclosing_scroll_frame_offset(CSSPixelPoint offset) { m_enclosing_scroll_frame_offset = offset; }
+    //    void set_corner_clip_radii(BorderRadiiData const& corner_radii) { m_corner_clip_radii = corner_radii; }
 
-    Optional<int> scroll_frame_id() const { return m_scroll_frame_id; }
+    //    Optional<int> scroll_frame_id() const { return m_scroll_frame_id; }
+    Optional<int> scroll_frame_id() const
+    {
+        if (m_clip_property_node)
+            return m_clip_property_node->closest_scroll_frame_id(this);
+        return {};
+    }
 
 protected:
     explicit PaintableBox(Layout::Box const&);
@@ -211,8 +217,20 @@ protected:
     virtual CSSPixelRect compute_absolute_rect() const;
     virtual CSSPixelRect compute_absolute_paint_rect() const;
 
-    Optional<CSSPixelPoint> enclosing_scroll_frame_offset() const { return m_enclosing_scroll_frame_offset; }
-    Optional<CSSPixelRect> clip_rect() const { return m_clip_rect; }
+    //    Optional<CSSPixelPoint> enclosing_scroll_frame_offset() const { return m_enclosing_scroll_frame_offset; }
+    Optional<CSSPixelPoint> enclosing_scroll_frame_offset() const
+    {
+        if (m_clip_property_node)
+            return m_clip_property_node->scroll_offset(this);
+        return {};
+    }
+    Optional<CSSPixelRect> clip_rect() const
+    {
+        Optional<CSSPixelRect> optional_clip_rect;
+        if (m_clip_property_node)
+            optional_clip_rect = m_clip_property_node->clip_rect(this);
+        return optional_clip_rect;
+    }
 
 private:
     [[nodiscard]] virtual bool is_paintable_box() const final { return true; }
@@ -229,8 +247,8 @@ private:
     mutable Optional<u32> m_corner_clipper_id;
 
     Optional<CSSPixelRect> m_clip_rect;
-    Optional<int> m_scroll_frame_id;
-    Optional<CSSPixelPoint> m_enclosing_scroll_frame_offset;
+    //    Optional<int> m_scroll_frame_id;
+    //    Optional<CSSPixelPoint> m_enclosing_scroll_frame_offset;
     Optional<BorderRadiiData> m_corner_clip_radii;
 
     Optional<BordersDataWithElementKind> m_override_borders_data;

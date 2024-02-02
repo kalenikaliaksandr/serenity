@@ -37,9 +37,31 @@ public:
     void set_box_shadow_data(Vector<ShadowData>&& box_shadow_data) { m_box_shadow_data = move(box_shadow_data); }
     Vector<ShadowData> const& box_shadow_data() const { return m_box_shadow_data; }
 
-    void set_scroll_frame_id(int id) { m_scroll_frame_id = id; }
-    void set_enclosing_scroll_frame_offset(CSSPixelPoint offset) { m_enclosing_scroll_frame_offset = offset; }
-    void set_clip_rect(Optional<CSSPixelRect> rect) { m_clip_rect = rect; }
+    //    void set_scroll_frame_id(int id) { m_scroll_frame_id = id; }
+    //    void set_enclosing_scroll_frame_offset(CSSPixelPoint offset) { m_enclosing_scroll_frame_offset = offset; }
+    //    void set_clip_rect(Optional<CSSPixelRect> rect) { m_clip_rect = rect; }
+
+    Optional<int> scroll_frame_id() const
+    {
+        if (m_clip_property_node)
+            return m_clip_property_node->closest_scroll_frame_id(this);
+        return {};
+    }
+
+    Optional<CSSPixelPoint> enclosing_scroll_frame_offset() const
+    {
+        if (m_clip_property_node)
+            return m_clip_property_node->scroll_offset(this);
+        return {};
+    }
+
+    Optional<CSSPixelRect> clip_rect() const
+    {
+        Optional<CSSPixelRect> optional_clip_rect;
+        if (m_clip_property_node)
+            optional_clip_rect = m_clip_property_node->clip_rect(this);
+        return optional_clip_rect;
+    }
 
 private:
     InlinePaintable(Layout::InlineNode const&);
@@ -47,9 +69,9 @@ private:
     template<typename Callback>
     void for_each_fragment(Callback) const;
 
-    Optional<int> m_scroll_frame_id;
-    Optional<CSSPixelPoint> m_enclosing_scroll_frame_offset;
-    Optional<CSSPixelRect> m_clip_rect;
+    //    Optional<int> m_scroll_frame_id;
+    //    Optional<CSSPixelPoint> m_enclosing_scroll_frame_offset;
+    //    Optional<CSSPixelRect> m_clip_rect;
 
     Vector<ShadowData> m_box_shadow_data;
     Vector<PaintableFragment> m_fragments;

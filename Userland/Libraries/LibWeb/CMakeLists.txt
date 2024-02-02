@@ -516,6 +516,7 @@ set(SOURCES
     Painting/TextPaintable.cpp
     Painting/VideoPaintable.cpp
     Painting/ViewportPaintable.cpp
+    Painting/PaintPropertiesTree.cpp
     PerformanceTimeline/EntryTypes.cpp
     PerformanceTimeline/PerformanceEntry.cpp
     PerformanceTimeline/PerformanceObserver.cpp

@@ -29,21 +29,21 @@ Layout::InlineNode const& InlinePaintable::layout_node() const
 
 void InlinePaintable::before_paint(PaintContext& context, PaintPhase) const
 {
-    if (m_scroll_frame_id.has_value()) {
+    if (scroll_frame_id().has_value()) {
         context.recording_painter().save();
-        context.recording_painter().set_scroll_frame_id(m_scroll_frame_id.value());
+        context.recording_painter().set_scroll_frame_id(scroll_frame_id().value());
     }
-    if (m_clip_rect.has_value()) {
+    if (clip_rect().has_value()) {
         context.recording_painter().save();
-        context.recording_painter().add_clip_rect(context.enclosing_device_rect(*m_clip_rect).to_type<int>());
+        context.recording_painter().add_clip_rect(context.enclosing_device_rect(*clip_rect()).to_type<int>());
     }
 }
 
 void InlinePaintable::after_paint(PaintContext& context, PaintPhase) const
 {
-    if (m_clip_rect.has_value())
+    if (clip_rect().has_value())
         context.recording_painter().restore();
-    if (m_scroll_frame_id.has_value())
+    if (scroll_frame_id().has_value())
         context.recording_painter().restore();
 }
 
@@ -182,12 +182,12 @@ void InlinePaintable::for_each_fragment(Callback callback) const
 
 Optional<HitTestResult> InlinePaintable::hit_test(CSSPixelPoint position, HitTestType type) const
 {
-    if (m_clip_rect.has_value() && !m_clip_rect.value().contains(position))
+    if (clip_rect().has_value() && !clip_rect().value().contains(position))
         return {};
 
     auto position_adjusted_by_scroll_offset = position;
-    if (m_enclosing_scroll_frame_offset.has_value())
-        position_adjusted_by_scroll_offset.translate_by(-m_enclosing_scroll_frame_offset.value());
+    if (enclosing_scroll_frame_offset().has_value())
+        position_adjusted_by_scroll_offset.translate_by(-enclosing_scroll_frame_offset().value());
 
     for (auto& fragment : m_fragments) {
         if (fragment.paintable().stacking_context())

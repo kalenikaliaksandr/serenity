@@ -5,6 +5,7 @@
  */
 
 #include <LibWeb/Layout/Viewport.h>
+#include <LibWeb/Painting/PaintPropertiesTree.h>
 #include <LibWeb/Painting/StackingContext.h>
 #include <LibWeb/Painting/ViewportPaintable.h>
 
@@ -58,6 +59,8 @@ void ViewportPaintable::paint_all_phases(PaintContext& context)
 
 void ViewportPaintable::assign_scroll_frame_ids(HashMap<Painting::PaintableBox const*, ScrollFrame>& scroll_frames) const
 {
+    (void)scroll_frames;
+    /*
     i32 next_id = 0;
     // Collect scroll frames with their offsets (accumulated offset for nested scroll frames).
     for_each_in_subtree_of_type<PaintableBox>([&](auto const& paintable_box) {
@@ -93,10 +96,72 @@ void ViewportPaintable::assign_scroll_frame_ids(HashMap<Painting::PaintableBox c
         }
         return TraversalDecision::Continue;
     });
+     */
+}
+
+void ViewportPaintable::build_paint_property_tree(Vector<Painting::ViewportPaintable::ScrollFrame>& scroll_frames)
+{
+    dbgln(">>>build_paint_property_tree");
+    (void)scroll_frames;
+
+    auto root = PropertyTreeNode::create(nullptr, this, PropertyTreeNode::OverflowClip::No, PropertyTreeNode::CSSClip::No, PropertyTreeNode::CSSTransform::No, PropertyTreeNode::ScrollOffset::No);
+    this->m_clip_property_node = root;
+    int next_scroll_frame_id = 0;
+    for_each_in_subtree([&](Paintable const& paintable) {
+        auto const* containing_block = paintable.containing_block();
+        auto parent = paintable.containing_block()->paintable()->m_clip_property_node;
+
+        if (paintable.is_paintable_box()) {
+            auto const& paintable_box = static_cast<PaintableBox const&>(paintable);
+            auto const& transformations = paintable_box.computed_values().transformations();
+            if (!transformations.is_empty()) {
+                auto matrix = Gfx::FloatMatrix4x4::identity();
+                for (auto const& transform : transformations)
+                    matrix = matrix * transform.to_matrix(paintable_box).release_value();
+                const_cast<PaintableBox&>(paintable_box).set_transform(matrix);
+            }
+        }
+
+        auto const& computed_values = paintable.computed_values();
+        auto has_css_transform = computed_values.transformations().is_empty() ? PropertyTreeNode::CSSTransform::No : PropertyTreeNode::CSSTransform::Yes;
+        auto has_scroll_offset = PropertyTreeNode::ScrollOffset::No;
+        if (paintable.is_paintable_box()) {
+            auto const& paintable_box = static_cast<PaintableBox const&>(paintable);
+            has_scroll_offset = paintable_box.has_scrollable_overflow() ? PropertyTreeNode::ScrollOffset::Yes : PropertyTreeNode::ScrollOffset::No;
+        }
+
+        auto has_overflow_clip = PropertyTreeNode::OverflowClip::No;
+        if (computed_values.overflow_x() != CSS::Overflow::Visible || computed_values.overflow_y() != CSS::Overflow::Visible)
+            has_overflow_clip = PropertyTreeNode::OverflowClip::Yes;
+
+        auto has_css_clip = PropertyTreeNode::CSSClip::No;
+        if (paintable.is_paintable_box() && computed_values.clip().is_rect())
+            has_css_clip = PropertyTreeNode::CSSClip::Yes;
+
+        if (has_css_transform == PropertyTreeNode::CSSTransform::Yes || has_scroll_offset == PropertyTreeNode::ScrollOffset::Yes || has_overflow_clip == PropertyTreeNode::OverflowClip::Yes || has_css_clip == PropertyTreeNode::CSSClip::Yes) {
+            auto node = PropertyTreeNode::create(parent, &paintable, has_overflow_clip, has_css_clip, has_css_transform, has_scroll_offset);
+            if (has_scroll_offset == PropertyTreeNode::ScrollOffset::Yes) {
+                node->m_scroll_frame_id = next_scroll_frame_id++;
+                // auto offset = node->scroll_offset(node->paintable());
+                auto offset = node->scroll_offset(nullptr);
+                VERIFY(offset.has_value());
+                scroll_frames.append({ node->m_scroll_frame_id.value(), offset.value() });
+                //                dbgln(">>>add scroll frame layout_node=({}) offset=({})", paintable.layout_node().debug_description(), offset.value());
+            }
+            const_cast<Paintable&>(paintable).m_clip_property_node = node;
+        } else {
+            VERIFY(containing_block->paintable()->m_clip_property_node);
+            const_cast<Paintable&>(paintable).m_clip_property_node = containing_block->paintable()->m_clip_property_node;
+        }
+
+        return TraversalDecision::Continue;
+    });
+    //    dbgln(">next_scroll_frame_index = ({})", next_scroll_frame_index);
 }
 
 void ViewportPaintable::assign_clip_rectangles()
 {
+    /*
     HashMap<Paintable const*, CSSPixelRect> clip_rects;
     // Calculate clip rects for all boxes that either have hidden overflow or a CSS clip property.
     for_each_in_subtree_of_type<PaintableBox>([&](auto const& paintable_box) {
@@ -151,6 +216,7 @@ void ViewportPaintable::assign_clip_rectangles()
         }
         return TraversalDecision::Continue;
     });
+     */
 }
 
 }
