@@ -2106,18 +2106,13 @@ void Navigable::paint(Painting::RecordingPainter& recording_painter, PaintConfig
     context.set_should_paint_overlay(config.paint_overlay);
     context.set_has_focus(config.has_focus);
 
-    if (m_needs_to_resolve_paint_only_properties) {
-        document->paintable()->resolve_paint_only_properties();
-        m_needs_to_resolve_paint_only_properties = false;
-    }
-
-    HashMap<Painting::PaintableBox const*, Painting::ViewportPaintable::ScrollFrame> scroll_frames;
-    if (is_traversable()) {
-        document->paintable()->assign_scroll_frame_ids(scroll_frames);
-        document->paintable()->assign_clip_rectangles();
-    }
-
+    if (is_traversable())
+        document->paintable()->assign_scroll_frame_ids();
+    document->paintable()->resolve_paint_only_properties();
     document->paintable()->paint_all_phases(context);
+
+    auto const& viewport_paintable = *document->paintable();
+    auto const& scroll_frames = viewport_paintable.m_scroll_frames;
 
     // FIXME: Support scrollable frames inside iframes.
     if (is_traversable()) {
@@ -2129,6 +2124,16 @@ void Navigable::paint(Painting::RecordingPainter& recording_painter, PaintConfig
         }
         recording_painter.apply_scroll_offsets(scroll_offsets_by_frame_id);
     }
+}
+
+void Navigable::set_needs_to_resolve_paint_only_properties()
+{
+    auto document = active_document();
+    if (!document)
+        return;
+
+    if (document->paintable())
+        document->paintable()->m_needs_to_resolve_paint_only_properties = true;
 }
 
 // https://html.spec.whatwg.org/multipage/browsing-the-web.html#event-uni

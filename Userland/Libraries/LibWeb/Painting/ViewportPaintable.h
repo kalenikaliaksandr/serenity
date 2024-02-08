@@ -24,12 +24,16 @@ public:
         i32 id { -1 };
         CSSPixelPoint offset;
     };
-    void assign_scroll_frame_ids(HashMap<Painting::PaintableBox const*, ScrollFrame>&) const;
-    void assign_clip_rectangles();
     void resolve_paint_only_properties();
+
+    HashMap<Painting::PaintableBox const*, ScrollFrame> m_scroll_frames;
+    bool m_needs_to_resolve_paint_only_properties { true };
+
+    void assign_scroll_frame_ids();
 
 private:
     void build_stacking_context_tree();
+    void assign_clip_rectangles();
 
     explicit ViewportPaintable(Layout::Viewport const&);
 };

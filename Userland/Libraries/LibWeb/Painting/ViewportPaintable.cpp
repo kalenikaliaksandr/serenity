@@ -58,8 +58,10 @@ void ViewportPaintable::paint_all_phases(PaintContext& context)
     stacking_context()->paint(context);
 }
 
-void ViewportPaintable::assign_scroll_frame_ids(HashMap<Painting::PaintableBox const*, ScrollFrame>& scroll_frames) const
+void ViewportPaintable::assign_scroll_frame_ids()
 {
+    auto& scroll_frames = m_scroll_frames;
+
     i32 next_id = 0;
     // Collect scroll frames with their offsets (accumulated offset for nested scroll frames).
     for_each_in_subtree_of_type<PaintableBox>([&](auto const& paintable_box) {
@@ -207,6 +209,10 @@ static Painting::BorderRadiiData normalize_border_radii_data(Layout::Node const&
 
 void ViewportPaintable::resolve_paint_only_properties()
 {
+    if (!m_needs_to_resolve_paint_only_properties)
+        return;
+    m_needs_to_resolve_paint_only_properties = false;
+
     // Resolves layout-dependent properties not handled during layout and stores them in the paint tree.
     // Properties resolved include:
     // - Border radii
@@ -405,6 +411,8 @@ void ViewportPaintable::resolve_paint_only_properties()
 
         return TraversalDecision::Continue;
     });
+
+    assign_clip_rectangles();
 }
 
 }
