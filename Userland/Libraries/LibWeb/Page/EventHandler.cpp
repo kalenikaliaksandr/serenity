@@ -22,6 +22,8 @@
 #include <LibWeb/Page/Page.h>
 #include <LibWeb/Painting/PaintableBox.h>
 #include <LibWeb/UIEvents/EventNames.h>
+#include <LibWeb/UIEvents/InputEvent.h>
+#include <LibWeb/UIEvents/InputTypes.h>
 #include <LibWeb/UIEvents/KeyboardEvent.h>
 #include <LibWeb/UIEvents/MouseEvent.h>
 #include <LibWeb/UIEvents/WheelEvent.h>
@@ -736,6 +738,41 @@ bool EventHandler::fire_keyboard_event(FlyString const& event_name, HTML::Browsi
     return document->root().dispatch_event(event);
 }
 
+bool EventHandler::fire_input_event(FlyString const& event_name, FlyString const& input_type, HTML::BrowsingContext& browsing_context, u32 code_point)
+{
+    JS::GCPtr<DOM::Document> document = browsing_context.active_document();
+    if (!document)
+        return false;
+    if (!document->is_fully_active())
+        return false;
+
+    UIEvents::InputEventInit input_event_init;
+    if (!is_unicode_control(code_point)) {
+        StringBuilder data_builder;
+        data_builder.append_code_point(code_point);
+        input_event_init.data = MUST(data_builder.to_string());
+    }
+    input_event_init.input_type = input_type;
+
+    if (JS::GCPtr<DOM::Element> focused_element = document->focused_element()) {
+        if (is<HTML::NavigableContainer>(*focused_element)) {
+            auto& navigable_container = verify_cast<HTML::NavigableContainer>(*focused_element);
+            if (navigable_container.nested_browsing_context())
+                return fire_input_event(event_name, input_type, *navigable_container.nested_browsing_context(), code_point);
+        }
+
+        auto event = MUST(UIEvents::InputEvent::create(document->realm(), event_name, input_event_init));
+        return focused_element->dispatch_event(event);
+    }
+
+    auto event = MUST(UIEvents::InputEvent::create(document->realm(), event_name, input_event_init));
+
+    if (JS::GCPtr<HTML::HTMLElement> body = document->body())
+        return body->dispatch_event(event);
+
+    return document->root().dispatch_event(event);
+}
+
 bool EventHandler::handle_keydown(KeyCode key, u32 modifiers, u32 code_point)
 {
     if (!m_browsing_context->active_document())
@@ -794,6 +831,7 @@ bool EventHandler::handle_keydown(KeyCode key, u32 modifiers, u32 code_point)
             }
 
             m_edit_event_handler->handle_delete_character_after(*m_browsing_context->cursor_position());
+            fire_input_event(UIEvents::EventNames::input, UIEvents::InputTypes::deleteContentBackward, m_browsing_context, code_point);
             return true;
         }
         if (key == KeyCode::Key_Delete) {
@@ -802,6 +840,7 @@ bool EventHandler::handle_keydown(KeyCode key, u32 modifiers, u32 code_point)
                 return true;
             }
             m_edit_event_handler->handle_delete_character_after(*m_browsing_context->cursor_position());
+            fire_input_event(UIEvents::EventNames::input, UIEvents::InputTypes::deleteContentForward, m_browsing_context, code_point);
             return true;
         }
         if (key == KeyCode::Key_Right) {
@@ -844,10 +883,12 @@ bool EventHandler::handle_keydown(KeyCode key, u32 modifiers, u32 code_point)
             if (input_element) {
                 if (auto* form = input_element->form()) {
                     form->implicitly_submit_form().release_value_but_fixme_should_propagate_errors();
+                    fire_input_event(UIEvents::EventNames::input, UIEvents::InputTypes::insertParagraph, m_browsing_context, code_point);
                     return true;
                 }
 
                 input_element->commit_pending_changes();
+                fire_input_event(UIEvents::EventNames::input, UIEvents::InputTypes::insertParagraph, m_browsing_context, code_point);
                 return true;
             }
         }
@@ -855,8 +896,15 @@ bool EventHandler::handle_keydown(KeyCode key, u32 modifiers, u32 code_point)
         if (!should_ignore_keydown_event(code_point, modifiers)) {
             m_edit_event_handler->handle_insert(JS::NonnullGCPtr { *m_browsing_context->cursor_position() }, code_point);
             m_browsing_context->increment_cursor_position_offset();
+            if (key == KeyCode::Key_Return)
+                fire_input_event(UIEvents::EventNames::input, UIEvents::InputTypes::insertParagraph, m_browsing_context, code_point);
+            else
+                fire_input_event(UIEvents::EventNames::input, UIEvents::InputTypes::insertText, m_browsing_context, code_point);
             return true;
         }
+
+        if (key == KeyCode::Key_Return)
+            fire_input_event(UIEvents::EventNames::input, UIEvents::InputTypes::insertParagraph, m_browsing_context, code_point);
 
         // NOTE: Because modifier keys should be ignored, we need to return true.
         return true;

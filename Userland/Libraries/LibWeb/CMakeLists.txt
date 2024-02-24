@@ -606,6 +606,8 @@ set(SOURCES
     Selection/Selection.cpp
     UIEvents/EventNames.cpp
     UIEvents/FocusEvent.cpp
+    UIEvents/InputEvent.cpp
+    UIEvents/InputTypes.cpp
     UIEvents/KeyboardEvent.cpp
     UIEvents/MouseEvent.cpp
     UIEvents/UIEvent.cpp

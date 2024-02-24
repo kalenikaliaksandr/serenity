@@ -44,6 +44,7 @@ private:
     bool focus_next_element();
     bool focus_previous_element();
 
+    bool fire_input_event(FlyString const& event_name, FlyString const& input_type, HTML::BrowsingContext& browsing_context, u32 code_point);
     bool fire_keyboard_event(FlyString const& event_name, HTML::BrowsingContext& browsing_context, KeyCode key, unsigned modifiers, u32 code_point);
     CSSPixelPoint compute_mouse_event_client_offset(CSSPixelPoint event_page_position) const;
     CSSPixelPoint compute_mouse_event_page_offset(CSSPixelPoint event_client_offset) const;
