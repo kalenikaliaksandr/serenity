@@ -139,8 +139,10 @@ int GridFormattingContext::count_of_repeated_auto_fill_or_fit_tracks(GridDimensi
     // floor be 1px.
 }
 
-void GridFormattingContext::place_item_with_row_and_column_position(Box const& child_box)
+void GridFormattingContext::place_item_with_row_and_column_position(UnplacedGridItem const& unplaced_item)
 {
+    auto const& child_box = unplaced_item.box;
+
     auto const& grid_row_start = child_box.computed_values().grid_row_start();
     auto const& grid_row_end = child_box.computed_values().grid_row_end();
     auto const& grid_column_start = child_box.computed_values().grid_column_start();
@@ -254,10 +256,10 @@ void GridFormattingContext::place_item_with_row_and_column_position(Box const& c
     // lines, which can be exclusively indexed by filtering the placement by name:
 
     // https://drafts.csswg.org/css-grid/#grid-placement-errors
-    // 8.3.1. Grid Placement Conflict Handling
-    // If the placement for a grid item contains two lines, and the start line is further end-ward than
+    // 8.3.1. Grid Placement Conflict Handlingard than
     // the end line, swap the two lines. If the start line is equal to the end line, remove the end
     // line.
+    // If the placement for a grid item contains two lines, and the start line is further end-w
     if (grid_row_start.is_positioned() && grid_row_end.is_positioned()) {
         if (row_start > row_end)
             swap(row_start, row_end);
@@ -290,8 +292,10 @@ void GridFormattingContext::place_item_with_row_and_column_position(Box const& c
     m_occupation_grid.set_occupied(column_start, column_start + column_span, row_start, row_start + row_span);
 }
 
-void GridFormattingContext::place_item_with_row_position(Box const& child_box)
+void GridFormattingContext::place_item_with_row_position(UnplacedGridItem const& unplaced_item)
 {
+    auto const& child_box = unplaced_item.box;
+
     auto const& grid_row_start = child_box.computed_values().grid_row_start();
     auto const& grid_row_end = child_box.computed_values().grid_row_end();
     auto const& grid_column_start = child_box.computed_values().grid_column_start();
@@ -419,8 +423,10 @@ void GridFormattingContext::place_item_with_row_position(Box const& child_box)
         .column_span = column_span });
 }
 
-void GridFormattingContext::place_item_with_column_position(Box const& child_box, int& auto_placement_cursor_x, int& auto_placement_cursor_y)
+void GridFormattingContext::place_item_with_column_position(UnplacedGridItem const& unplaced_item, int& auto_placement_cursor_x, int& auto_placement_cursor_y)
 {
+    auto const& child_box = unplaced_item.box;
+
     auto const& grid_row_start = child_box.computed_values().grid_row_start();
     auto const& grid_column_start = child_box.computed_values().grid_column_start();
     auto const& grid_column_end = child_box.computed_values().grid_column_end();
@@ -587,8 +593,10 @@ FoundUnoccupiedPlace OccupationGrid::find_unoccupied_place(GridDimension dimensi
     return FoundUnoccupiedPlace::No;
 }
 
-void GridFormattingContext::place_item_with_no_declared_position(Box const& child_box, int& auto_placement_cursor_x, int& auto_placement_cursor_y)
+void GridFormattingContext::place_item_with_no_declared_position(UnplacedGridItem const& unplaced_item, int& auto_placement_cursor_x, int& auto_placement_cursor_y)
 {
+    auto const& child_box = unplaced_item.box;
+
     auto const& computed_values = child_box.computed_values();
     auto const& grid_row_start = computed_values.grid_row_start();
     auto const& grid_row_end = computed_values.grid_row_end();
@@ -1476,7 +1484,7 @@ void GridFormattingContext::place_grid_items()
     // flex items), which are then assigned to predefined areas in the grid. They can be explicitly
     // placed using coordinates through the grid-placement properties or implicitly placed into
     // empty areas using auto-placement.
-    HashMap<int, Vector<JS::NonnullGCPtr<Box const>>> order_item_bucket;
+    HashMap<int, Vector<UnplacedGridItem>> order_item_bucket;
     grid_container().for_each_child_of_type<Box>([&](Box& child_box) {
         if (can_skip_is_anonymous_text_run(child_box))
             return IterationDecision::Continue;
@@ -1487,7 +1495,7 @@ void GridFormattingContext::place_grid_items()
         child_box.set_grid_item(true);
 
         auto& order_bucket = order_item_bucket.ensure(child_box.computed_values().order());
-        order_bucket.append(child_box);
+        order_bucket.append(UnplacedGridItem { child_box });
 
         return IterationDecision::Continue;
     });
@@ -1506,11 +1514,10 @@ void GridFormattingContext::place_grid_items()
     for (auto key : keys) {
         auto& boxes_to_place = order_item_bucket.get(key).value();
         for (size_t i = 0; i < boxes_to_place.size(); i++) {
-            auto const& child_box = boxes_to_place[i];
-            if (is_auto_positioned_track(child_box->computed_values().grid_row_start(), child_box->computed_values().grid_row_end())
-                || is_auto_positioned_track(child_box->computed_values().grid_column_start(), child_box->computed_values().grid_column_end()))
+            auto const& unplaced_item = boxes_to_place[i];
+            if (unplaced_item.is_auto_positioned_column() || unplaced_item.is_auto_positioned_row())
                 continue;
-            place_item_with_row_and_column_position(child_box);
+            place_item_with_row_and_column_position(unplaced_item);
             boxes_to_place.remove(i);
             i--;
         }
@@ -1521,10 +1528,10 @@ void GridFormattingContext::place_grid_items()
     for (auto key : keys) {
         auto& boxes_to_place = order_item_bucket.get(key).value();
         for (size_t i = 0; i < boxes_to_place.size(); i++) {
-            auto const& child_box = boxes_to_place[i];
-            if (is_auto_positioned_track(child_box->computed_values().grid_row_start(), child_box->computed_values().grid_row_end()))
+            auto const& unplaced_item = boxes_to_place[i];
+            if (unplaced_item.is_auto_positioned_row())
                 continue;
-            place_item_with_row_position(child_box);
+            place_item_with_row_position(unplaced_item);
             boxes_to_place.remove(i);
             i--;
         }
@@ -1548,9 +1555,11 @@ void GridFormattingContext::place_grid_items()
     // that column span.
     for (auto key : keys) {
         auto& boxes_to_place = order_item_bucket.get(key).value();
-        for (auto const& child_box : boxes_to_place) {
-            auto const& grid_column_start = child_box->computed_values().grid_column_start();
-            auto const& grid_column_end = child_box->computed_values().grid_column_end();
+        for (auto const& unplaced_box : boxes_to_place) {
+            auto const& child_box = unplaced_box.box;
+
+            auto const& grid_column_start = child_box.computed_values().grid_column_start();
+            auto const& grid_column_end = child_box.computed_values().grid_column_end();
 
             int column_span = 1;
             if (grid_column_start.is_span())
@@ -1571,17 +1580,18 @@ void GridFormattingContext::place_grid_items()
     for (auto key : keys) {
         auto& boxes_to_place = order_item_bucket.get(key).value();
         for (size_t i = 0; i < boxes_to_place.size(); i++) {
-            auto const& child_box = boxes_to_place[i];
+            auto const& unplaced_box = boxes_to_place[i];
+            auto const& child_box = unplaced_box.box;
             // 4.1. For sparse packing:
             // FIXME: no distinction made. See #4.2
 
             // 4.1.1. If the item has a definite column position:
-            if (!is_auto_positioned_track(child_box->computed_values().grid_column_start(), child_box->computed_values().grid_column_end()))
-                place_item_with_column_position(child_box, auto_placement_cursor_x, auto_placement_cursor_y);
+            if (!is_auto_positioned_track(child_box.computed_values().grid_column_start(), child_box.computed_values().grid_column_end()))
+                place_item_with_column_position(unplaced_box, auto_placement_cursor_x, auto_placement_cursor_y);
 
             // 4.1.2. If the item has an automatic grid position in both axes:
             else
-                place_item_with_no_declared_position(child_box, auto_placement_cursor_x, auto_placement_cursor_y);
+                place_item_with_no_declared_position(unplaced_box, auto_placement_cursor_x, auto_placement_cursor_y);
 
             boxes_to_place.remove(i);
             i--;

@@ -23,6 +23,26 @@ struct GridPosition {
     inline bool operator==(GridPosition const&) const = default;
 };
 
+struct UnplacedGridItem {
+    Box const& box;
+
+    bool is_auto_positioned_column() const
+    {
+        auto const& computed_values = box.computed_values();
+        auto const& grid_column_start = computed_values.grid_column_start();
+        auto const& grid_column_end = computed_values.grid_column_end();
+        return grid_column_start.is_auto_positioned() && grid_column_end.is_auto_positioned();
+    }
+
+    bool is_auto_positioned_row() const
+    {
+        auto const& computed_values = box.computed_values();
+        auto const& grid_row_start = computed_values.grid_row_start();
+        auto const& grid_row_end = computed_values.grid_row_end();
+        return grid_row_start.is_auto_positioned() && grid_row_end.is_auto_positioned();
+    }
+};
+
 struct GridItem {
     JS::NonnullGCPtr<Box const> box;
 
@@ -254,10 +274,10 @@ private:
     void build_grid_areas();
 
     void place_grid_items();
-    void place_item_with_row_and_column_position(Box const& child_box);
-    void place_item_with_row_position(Box const& child_box);
-    void place_item_with_column_position(Box const& child_box, int& auto_placement_cursor_x, int& auto_placement_cursor_y);
-    void place_item_with_no_declared_position(Box const& child_box, int& auto_placement_cursor_x, int& auto_placement_cursor_y);
+    void place_item_with_row_and_column_position(UnplacedGridItem const& child_box);
+    void place_item_with_row_position(UnplacedGridItem const& child_box);
+    void place_item_with_column_position(UnplacedGridItem const& child_box, int& auto_placement_cursor_x, int& auto_placement_cursor_y);
+    void place_item_with_no_declared_position(UnplacedGridItem const& child_box, int& auto_placement_cursor_x, int& auto_placement_cursor_y);
 
     void initialize_grid_tracks_from_definition(GridDimension);
     void initialize_grid_tracks_for_columns_and_rows();
