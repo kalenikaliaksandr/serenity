@@ -1507,8 +1507,8 @@ void GridFormattingContext::place_grid_items()
         auto& boxes_to_place = order_item_bucket.get(key).value();
         for (size_t i = 0; i < boxes_to_place.size(); i++) {
             auto const& child_box = boxes_to_place[i];
-            if (is_auto_positioned_row(child_box->computed_values().grid_row_start(), child_box->computed_values().grid_row_end())
-                || is_auto_positioned_column(child_box->computed_values().grid_column_start(), child_box->computed_values().grid_column_end()))
+            if (is_auto_positioned_track(child_box->computed_values().grid_row_start(), child_box->computed_values().grid_row_end())
+                || is_auto_positioned_track(child_box->computed_values().grid_column_start(), child_box->computed_values().grid_column_end()))
                 continue;
             place_item_with_row_and_column_position(child_box);
             boxes_to_place.remove(i);
@@ -1522,7 +1522,7 @@ void GridFormattingContext::place_grid_items()
         auto& boxes_to_place = order_item_bucket.get(key).value();
         for (size_t i = 0; i < boxes_to_place.size(); i++) {
             auto const& child_box = boxes_to_place[i];
-            if (is_auto_positioned_row(child_box->computed_values().grid_row_start(), child_box->computed_values().grid_row_end()))
+            if (is_auto_positioned_track(child_box->computed_values().grid_row_start(), child_box->computed_values().grid_row_end()))
                 continue;
             place_item_with_row_position(child_box);
             boxes_to_place.remove(i);
@@ -1576,7 +1576,7 @@ void GridFormattingContext::place_grid_items()
             // FIXME: no distinction made. See #4.2
 
             // 4.1.1. If the item has a definite column position:
-            if (!is_auto_positioned_column(child_box->computed_values().grid_column_start(), child_box->computed_values().grid_column_end()))
+            if (!is_auto_positioned_track(child_box->computed_values().grid_column_start(), child_box->computed_values().grid_column_end()))
                 place_item_with_column_position(child_box, auto_placement_cursor_x, auto_placement_cursor_y);
 
             // 4.1.2. If the item has an automatic grid position in both axes:
@@ -2269,16 +2269,6 @@ CSSPixels GridFormattingContext::automatic_content_width() const
 CSSPixels GridFormattingContext::automatic_content_height() const
 {
     return m_automatic_content_height;
-}
-
-bool GridFormattingContext::is_auto_positioned_row(CSS::GridTrackPlacement const& grid_row_start, CSS::GridTrackPlacement const& grid_row_end) const
-{
-    return is_auto_positioned_track(grid_row_start, grid_row_end);
-}
-
-bool GridFormattingContext::is_auto_positioned_column(CSS::GridTrackPlacement const& grid_column_start, CSS::GridTrackPlacement const& grid_column_end) const
-{
-    return is_auto_positioned_track(grid_column_start, grid_column_end);
 }
 
 bool GridFormattingContext::is_auto_positioned_track(CSS::GridTrackPlacement const& grid_track_start, CSS::GridTrackPlacement const& grid_track_end) const
