@@ -25,6 +25,12 @@ struct GridPosition {
 
 struct UnplacedGridItem {
     Box const& box;
+    Optional<int> row_line_start_index {};
+    Optional<int> row_line_end_index {};
+    Optional<int> column_line_start_index {};
+    Optional<int> column_line_end_index {};
+
+    void set_indexes();
 
     bool is_auto_positioned_column() const
     {

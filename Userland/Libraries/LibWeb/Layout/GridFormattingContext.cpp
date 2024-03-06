@@ -150,14 +150,22 @@ void GridFormattingContext::place_item_with_row_and_column_position(UnplacedGrid
 
     int row_start = 0, row_end = 0, column_start = 0, column_end = 0;
 
-    if (grid_row_start.has_line_number())
-        row_start = child_box.computed_values().grid_row_start().line_number() - 1;
-    if (grid_row_end.has_line_number())
-        row_end = child_box.computed_values().grid_row_end().line_number() - 1;
-    if (grid_column_start.has_line_number())
-        column_start = child_box.computed_values().grid_column_start().line_number() - 1;
-    if (grid_column_end.has_line_number())
-        column_end = child_box.computed_values().grid_column_end().line_number() - 1;
+    //    if (grid_row_start.has_line_number())
+    //        row_start = child_box.computed_values().grid_row_start().line_number() - 1;
+    //    if (grid_row_end.has_line_number())
+    //        row_end = child_box.computed_values().grid_row_end().line_number() - 1;
+    //    if (grid_column_start.has_line_number())
+    //        column_start = child_box.computed_values().grid_column_start().line_number() - 1;
+    //    if (grid_column_end.has_line_number())
+    //        column_end = child_box.computed_values().grid_column_end().line_number() - 1;
+    if (unplaced_item.row_line_start_index.has_value())
+        row_start = unplaced_item.row_line_start_index.value() - 1;
+    if (unplaced_item.row_line_end_index.has_value())
+        row_end = unplaced_item.row_line_end_index.value() - 1;
+    if (unplaced_item.column_line_start_index.has_value())
+        column_start = unplaced_item.column_line_start_index.value() - 1;
+    if (unplaced_item.column_line_end_index.has_value())
+        column_end = unplaced_item.column_line_end_index.value() - 1;
 
     // https://www.w3.org/TR/css-grid-2/#line-placement
     // 8.3. Line-based Placement: the grid-row-start, grid-column-start, grid-row-end, and grid-column-end properties
@@ -214,43 +222,51 @@ void GridFormattingContext::place_item_with_row_and_column_position(UnplacedGrid
     // https://www.w3.org/TR/css-grid-2/#common-uses-named-lines
     // 8.1.3. Named Lines and Spans
     // Instead of counting lines by number, lines can be referenced by their line name:
-    if (grid_column_end.has_identifier()) {
-        if (auto maybe_grid_area = m_grid_areas.get(grid_column_end.identifier()); maybe_grid_area.has_value())
-            column_end = maybe_grid_area->column_end;
-        else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Column, grid_column_end.identifier()); line_name_index.has_value())
-            column_end = line_name_index.value();
-        else
-            column_end = 1;
-        column_start = column_end - 1;
-    }
-
-    if (grid_column_start.has_identifier()) {
-        if (auto maybe_grid_area = m_grid_areas.get(grid_column_start.identifier()); maybe_grid_area.has_value())
-            column_start = maybe_grid_area->column_start;
-        else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Column, grid_column_start.identifier()); line_name_index.has_value())
-            column_start = line_name_index.value();
-        else
-            column_start = 0;
-    }
-
-    if (grid_row_end.has_identifier()) {
-        if (auto maybe_grid_area = m_grid_areas.get(grid_row_end.identifier()); maybe_grid_area.has_value())
-            row_end = maybe_grid_area->row_end;
-        else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Row, grid_row_end.identifier()); line_name_index.has_value())
-            row_end = line_name_index.value();
-        else
-            row_end = 1;
-        row_start = row_end - 1;
-    }
-
-    if (grid_row_start.has_identifier()) {
-        if (auto maybe_grid_area = m_grid_areas.get(grid_row_start.identifier()); maybe_grid_area.has_value())
-            row_start = maybe_grid_area->row_start;
-        else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Row, grid_row_start.identifier()); line_name_index.has_value())
-            row_start = line_name_index.value();
-        else
-            row_start = 0;
-    }
+    //    if (grid_column_end.has_identifier()) {
+    //        if (auto maybe_grid_area = m_grid_areas.get(grid_column_end.identifier()); maybe_grid_area.has_value())
+    //            column_end = maybe_grid_area->column_end;
+    //        else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Column, grid_column_end.identifier()); line_name_index.has_value())
+    //            column_end = line_name_index.value();
+    //        else {
+    //            VERIFY_NOT_REACHED();
+    //            column_end = 1;
+    //        }
+    //        column_start = column_end - 1;
+    //    }
+    //
+    //    if (grid_column_start.has_identifier()) {
+    //        if (auto maybe_grid_area = m_grid_areas.get(grid_column_start.identifier()); maybe_grid_area.has_value())
+    //            column_start = maybe_grid_area->column_start;
+    //        else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Column, grid_column_start.identifier()); line_name_index.has_value())
+    //            column_start = line_name_index.value();
+    //        else {
+    //            VERIFY_NOT_REACHED();
+    //            column_start = 0;
+    //        }
+    //    }
+    //
+    //    if (grid_row_end.has_identifier()) {
+    //        if (auto maybe_grid_area = m_grid_areas.get(grid_row_end.identifier()); maybe_grid_area.has_value())
+    //            row_end = maybe_grid_area->row_end;
+    //        else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Row, grid_row_end.identifier()); line_name_index.has_value())
+    //            row_end = line_name_index.value();
+    //        else {
+    //            VERIFY_NOT_REACHED();
+    //            row_end = 1;
+    //        }
+    //        row_start = row_end - 1;
+    //    }
+    //
+    //    if (grid_row_start.has_identifier()) {
+    //        if (auto maybe_grid_area = m_grid_areas.get(grid_row_start.identifier()); maybe_grid_area.has_value())
+    //            row_start = maybe_grid_area->row_start;
+    //        else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Row, grid_row_start.identifier()); line_name_index.has_value())
+    //            row_start = line_name_index.value();
+    //        else {
+    //            VERIFY_NOT_REACHED();
+    //            row_start = 0;
+    //        }
+    //    }
 
     // If there are multiple lines of the same name, they effectively establish a named set of grid
     // lines, which can be exclusively indexed by filtering the placement by name:
@@ -1471,6 +1487,70 @@ void GridFormattingContext::build_grid_areas()
     }
 }
 
+void UnplacedGridItem::set_indexes()
+{
+    auto const& grid_column_start = box.computed_values().grid_column_start();
+    auto const& grid_column_end = box.computed_values().grid_column_end();
+    auto const& grid_row_start = box.computed_values().grid_row_start();
+    auto const& grid_row_end = box.computed_values().grid_row_end();
+
+    //    (void)grid_column_start;
+    //    (void)grid_column_end;
+    //    (void)grid_row_start;
+    //    (void)grid_row_end;
+    if (grid_row_start.has_line_number())
+        row_line_start_index = grid_row_start.line_number();
+    if (grid_row_end.has_line_number())
+        row_line_end_index = grid_row_end.line_number();
+    if (grid_column_start.has_line_number())
+        column_line_start_index = grid_column_start.line_number();
+    if (grid_column_end.has_line_number())
+        column_line_end_index = grid_column_end.line_number();
+
+    //    if (grid_column_end.has_identifier()) {
+    //        if (auto maybe_grid_area = m_grid_areas.get(grid_column_end.identifier()); maybe_grid_area.has_value())
+    //            column_line_end_index = maybe_grid_area->column_end;
+    //        else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Column, grid_column_end.identifier()); line_name_index.has_value())
+    //            column_line_end_index = line_name_index.value();
+    //        else {
+    //            VERIFY_NOT_REACHED();
+    //        }
+    //    }
+    //
+    //    if (grid_column_start.has_identifier()) {
+    //        if (auto maybe_grid_area = m_grid_areas.get(grid_column_start.identifier()); maybe_grid_area.has_value())
+    //            column_line_start_index = maybe_grid_area->column_start;
+    //        else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Column, grid_column_start.identifier()); line_name_index.has_value())
+    //            column_line_start_index = line_name_index.value();
+    //        else {
+    //            VERIFY_NOT_REACHED();
+    //        }
+    //    }
+    //
+    //    if (grid_row_end.has_identifier()) {
+    //        if (auto maybe_grid_area = m_grid_areas.get(grid_row_end.identifier()); maybe_grid_area.has_value())
+    //            row_end = maybe_grid_area->row_end;
+    //        else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Row, grid_row_end.identifier()); line_name_index.has_value())
+    //            row_end = line_name_index.value();
+    //        else {
+    //            VERIFY_NOT_REACHED();
+    //            row_end = 1;
+    //        }
+    //        row_start = row_end - 1;
+    //    }
+    //
+    //    if (grid_row_start.has_identifier()) {
+    //        if (auto maybe_grid_area = m_grid_areas.get(grid_row_start.identifier()); maybe_grid_area.has_value())
+    //            row_start = maybe_grid_area->row_start;
+    //        else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Row, grid_row_start.identifier()); line_name_index.has_value())
+    //            row_start = line_name_index.value();
+    //        else {
+    //            VERIFY_NOT_REACHED();
+    //            row_start = 0;
+    //        }
+    //    }
+}
+
 void GridFormattingContext::place_grid_items()
 {
     auto grid_template_columns = grid_container().computed_values().grid_template_columns();
@@ -1495,7 +1575,64 @@ void GridFormattingContext::place_grid_items()
         child_box.set_grid_item(true);
 
         auto& order_bucket = order_item_bucket.ensure(child_box.computed_values().order());
-        order_bucket.append(UnplacedGridItem { child_box });
+        auto unplaced_item = UnplacedGridItem { child_box };
+        //        unplaced_item.set_indexes();
+
+        auto const& grid_column_start = child_box.computed_values().grid_column_start();
+        auto const& grid_column_end = child_box.computed_values().grid_column_end();
+        auto const& grid_row_start = child_box.computed_values().grid_row_start();
+        auto const& grid_row_end = child_box.computed_values().grid_row_end();
+
+        if (grid_row_start.has_line_number())
+            unplaced_item.row_line_start_index = grid_row_start.line_number();
+        if (grid_row_end.has_line_number())
+            unplaced_item.row_line_end_index = grid_row_end.line_number();
+        if (grid_column_start.has_line_number())
+            unplaced_item.column_line_start_index = grid_column_start.line_number();
+        if (grid_column_end.has_line_number())
+            unplaced_item.column_line_end_index = grid_column_end.line_number();
+
+        if (grid_column_end.has_identifier()) {
+            if (auto maybe_grid_area = m_grid_areas.get(grid_column_end.identifier()); maybe_grid_area.has_value())
+                unplaced_item.column_line_end_index = maybe_grid_area->column_end;
+            else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Column, grid_column_end.identifier()); line_name_index.has_value())
+                unplaced_item.column_line_end_index = line_name_index.value();
+            else {
+                VERIFY_NOT_REACHED();
+            }
+        }
+
+        if (grid_column_start.has_identifier()) {
+            if (auto maybe_grid_area = m_grid_areas.get(grid_column_start.identifier()); maybe_grid_area.has_value())
+                unplaced_item.column_line_start_index = maybe_grid_area->column_start;
+            else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Column, grid_column_start.identifier()); line_name_index.has_value())
+                unplaced_item.column_line_start_index = line_name_index.value();
+            else {
+                VERIFY_NOT_REACHED();
+            }
+        }
+
+        if (grid_row_end.has_identifier()) {
+            if (auto maybe_grid_area = m_grid_areas.get(grid_row_end.identifier()); maybe_grid_area.has_value())
+                unplaced_item.row_line_end_index = maybe_grid_area->row_end;
+            else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Row, grid_row_end.identifier()); line_name_index.has_value())
+                unplaced_item.row_line_end_index = line_name_index.value();
+            else {
+                VERIFY_NOT_REACHED();
+            }
+        }
+
+        if (grid_row_start.has_identifier()) {
+            if (auto maybe_grid_area = m_grid_areas.get(grid_row_start.identifier()); maybe_grid_area.has_value())
+                unplaced_item.row_line_start_index = maybe_grid_area->row_start;
+            else if (auto line_name_index = get_line_index_by_line_name(GridDimension::Row, grid_row_start.identifier()); line_name_index.has_value())
+                unplaced_item.row_line_start_index = line_name_index.value();
+            else {
+                VERIFY_NOT_REACHED();
+            }
+        }
+
+        order_bucket.append(move(unplaced_item));
 
         return IterationDecision::Continue;
     });
