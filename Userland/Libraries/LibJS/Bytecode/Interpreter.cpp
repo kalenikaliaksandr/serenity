@@ -45,6 +45,9 @@ static ByteString format_operand(StringView name, Operand operand, Bytecode::Exe
     if (!name.is_empty())
         builder.appendff("\033[32m{}\033[0m:", name);
     switch (operand.type()) {
+    case Operand::Type::Argument:
+        builder.appendff("\033[33marg{}\033[0m", operand.index());
+        break;
     case Operand::Type::Register:
         builder.appendff("\033[33mreg{}\033[0m", operand.index());
         break;
@@ -160,6 +163,8 @@ ALWAYS_INLINE Value Interpreter::get(Operand op) const
         return m_locals.data()[op.index()];
     case Operand::Type::Constant:
         return current_executable().constants[op.index()];
+    case Operand::Type::Argument:
+        return m_arguments.data()[op.index()];
     }
     __builtin_unreachable();
 }
@@ -172,6 +177,9 @@ ALWAYS_INLINE void Interpreter::set(Operand op, Value value)
         return;
     case Operand::Type::Local:
         m_locals.data()[op.index()] = value;
+        return;
+    case Operand::Type::Argument:
+        m_arguments.data()[op.index()] = value;
         return;
     case Operand::Type::Constant:
         VERIFY_NOT_REACHED();
@@ -228,7 +236,7 @@ ThrowCompletionOr<Value> Interpreter::run(Script& script_record, JS::GCPtr<Envir
 
     // 13. If result.[[Type]] is normal, then
     if (result.type() == Completion::Type::Normal) {
-        auto executable_result = JS::Bytecode::Generator::generate(vm, script, {});
+        auto executable_result = JS::Bytecode::Generator::generate_from_ast_node(vm, script, {});
 
         if (executable_result.is_error()) {
             if (auto error_string = executable_result.error().to_string(); error_string.is_error())
@@ -519,7 +527,10 @@ FLATTEN_ON_CLANG void Interpreter::run_bytecode(size_t entry_point)
             HANDLE_INSTRUCTION(ConcatString);
             HANDLE_INSTRUCTION(CopyObjectExcludingProperties);
             HANDLE_INSTRUCTION(CreateLexicalEnvironment);
+            HANDLE_INSTRUCTION(CreateVariableEnvironment);
             HANDLE_INSTRUCTION(CreateVariable);
+            HANDLE_INSTRUCTION(CreateRestParams);
+            HANDLE_INSTRUCTION(CreateArguments);
             HANDLE_INSTRUCTION(Decrement);
             HANDLE_INSTRUCTION(DeleteById);
             HANDLE_INSTRUCTION(DeleteByIdWithThis);
@@ -689,6 +700,7 @@ Interpreter::ResultAndReturnRegister Interpreter::run_executable(Executable& exe
     if (running_execution_context.registers.size() < executable.number_of_registers)
         running_execution_context.registers.resize(executable.number_of_registers);
 
+    TemporaryChange restore_arguments { m_arguments, running_execution_context.arguments.span() };
     TemporaryChange restore_registers { m_registers, running_execution_context.registers.span() };
     TemporaryChange restore_locals { m_locals, running_execution_context.locals.span() };
 
@@ -777,9 +789,26 @@ void Interpreter::enter_object_environment(Object& object)
     running_execution_context.lexical_environment = new_object_environment(object, true, old_environment);
 }
 
-ThrowCompletionOr<NonnullGCPtr<Bytecode::Executable>> compile(VM& vm, ASTNode const& node, ReadonlySpan<FunctionParameter> parameters, FunctionKind kind, DeprecatedFlyString const& name)
+ThrowCompletionOr<NonnullGCPtr<Bytecode::Executable>> compile(VM& vm, ASTNode const& node, FunctionKind kind, DeprecatedFlyString const& name)
 {
-    auto executable_result = Bytecode::Generator::generate(vm, node, parameters, kind);
+    auto executable_result = Bytecode::Generator::generate_from_ast_node(vm, node, kind);
+    if (executable_result.is_error())
+        return vm.throw_completion<InternalError>(ErrorType::NotImplemented, TRY_OR_THROW_OOM(vm, executable_result.error().to_string()));
+
+    auto bytecode_executable = executable_result.release_value();
+    bytecode_executable->name = name;
+
+    if (Bytecode::g_dump_bytecode)
+        bytecode_executable->dump();
+
+    return bytecode_executable;
+}
+
+ThrowCompletionOr<NonnullGCPtr<Bytecode::Executable>> compile(VM& vm, ECMAScriptFunctionObject const& function)
+{
+    auto const& name = function.name();
+
+    auto executable_result = Bytecode::Generator::generate_from_function(vm, function);
     if (executable_result.is_error())
         return vm.throw_completion<InternalError>(ErrorType::NotImplemented, TRY_OR_THROW_OOM(vm, executable_result.error().to_string()));
 
@@ -1238,6 +1267,15 @@ ThrowCompletionOr<void> CreateLexicalEnvironment::execute_impl(Bytecode::Interpr
     return {};
 }
 
+ThrowCompletionOr<void> CreateVariableEnvironment::execute_impl(Bytecode::Interpreter& interpreter) const
+{
+    auto& running_execution_context = interpreter.vm().running_execution_context();
+    auto var_environment = new_declarative_environment(*running_execution_context.lexical_environment);
+    running_execution_context.variable_environment = var_environment;
+    running_execution_context.lexical_environment = var_environment;
+    return {};
+}
+
 ThrowCompletionOr<void> EnterObjectEnvironment::execute_impl(Bytecode::Interpreter& interpreter) const
 {
     auto object = TRY(interpreter.get(m_object).to_object(interpreter.vm()));
@@ -1267,6 +1305,41 @@ ThrowCompletionOr<void> CreateVariable::execute_impl(Bytecode::Interpreter& inte
 {
     auto const& name = interpreter.current_executable().get_identifier(m_identifier);
     return create_variable(interpreter.vm(), name, m_mode, m_is_global, m_is_immutable, m_is_strict);
+}
+
+ThrowCompletionOr<void> CreateRestParams::execute_impl(Bytecode::Interpreter& interpreter) const
+{
+    auto const& arguments = interpreter.vm().running_execution_context().arguments;
+    auto arguments_count = interpreter.vm().running_execution_context().passed_argument_count;
+    auto array = MUST(Array::create(interpreter.realm(), 0));
+    for (size_t rest_index = m_rest_index; rest_index < arguments_count; ++rest_index)
+        array->indexed_properties().append(arguments[rest_index]);
+    interpreter.set(m_dst, array);
+    return {};
+}
+
+ThrowCompletionOr<void> CreateArguments::execute_impl(Bytecode::Interpreter& interpreter) const
+{
+    auto const& function = interpreter.vm().running_execution_context().function;
+    auto const& arguments = interpreter.vm().running_execution_context().arguments;
+    auto const& environment = interpreter.vm().running_execution_context().lexical_environment;
+
+    auto passed_arguments = ReadonlySpan<Value> { arguments.data(), interpreter.vm().running_execution_context().passed_argument_count };
+    Object* arguments_object;
+    if (m_kind == Kind::Mapped) {
+        arguments_object = create_mapped_arguments_object(interpreter.vm(), *function, function->formal_parameters(), passed_arguments, *environment);
+    } else {
+        arguments_object = create_unmapped_arguments_object(interpreter.vm(), passed_arguments);
+    }
+
+    if (m_is_immutable) {
+        MUST(environment->create_immutable_binding(interpreter.vm(), interpreter.vm().names.arguments.as_string(), false));
+    } else {
+        MUST(environment->create_mutable_binding(interpreter.vm(), interpreter.vm().names.arguments.as_string(), false));
+    }
+    MUST(environment->initialize_binding(interpreter.vm(), interpreter.vm().names.arguments.as_string(), arguments_object, Environment::InitializeBindingHint::Normal));
+
+    return {};
 }
 
 ThrowCompletionOr<void> SetVariable::execute_impl(Bytecode::Interpreter& interpreter) const
@@ -1977,10 +2050,25 @@ ByteString CreateLexicalEnvironment::to_byte_string_impl(Bytecode::Executable co
     return "CreateLexicalEnvironment"sv;
 }
 
+ByteString CreateVariableEnvironment::to_byte_string_impl(Bytecode::Executable const&) const
+{
+    return "CreateVariableEnvironment"sv;
+}
+
 ByteString CreateVariable::to_byte_string_impl(Bytecode::Executable const& executable) const
 {
     auto mode_string = m_mode == EnvironmentMode::Lexical ? "Lexical" : "Variable";
     return ByteString::formatted("CreateVariable env:{} immutable:{} global:{} {}", mode_string, m_is_immutable, m_is_global, executable.identifier_table->get(m_identifier));
+}
+
+ByteString CreateRestParams::to_byte_string_impl(Bytecode::Executable const& executable) const
+{
+    return ByteString::formatted("CreateRestParams {}, rest_index:{}", format_operand("dst"sv, m_dst, executable), m_rest_index);
+}
+
+ByteString CreateArguments::to_byte_string_impl(Bytecode::Executable const&) const
+{
+    return ByteString::formatted("CreateArguments {} immutable:{}", m_kind == Kind::Mapped ? "mapped"sv : "unmapped"sv, m_is_immutable);
 }
 
 ByteString EnterObjectEnvironment::to_byte_string_impl(Executable const& executable) const

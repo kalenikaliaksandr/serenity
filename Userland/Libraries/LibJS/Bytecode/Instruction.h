@@ -30,7 +30,10 @@
     O(ContinuePendingUnwind)           \
     O(CopyObjectExcludingProperties)   \
     O(CreateLexicalEnvironment)        \
+    O(CreateVariableEnvironment)       \
     O(CreateVariable)                  \
+    O(CreateRestParams)                \
+    O(CreateArguments)                 \
     O(Decrement)                       \
     O(DeleteById)                      \
     O(DeleteByIdWithThis)              \

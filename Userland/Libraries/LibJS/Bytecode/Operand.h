@@ -14,6 +14,7 @@ namespace JS::Bytecode {
 class Operand {
 public:
     enum class Type {
+        Argument,
         Register,
         Local,
         Constant,
@@ -29,6 +30,7 @@ public:
 
     explicit Operand(Register);
 
+    [[nodiscard]] bool is_argument() const { return m_type == Type::Argument; }
     [[nodiscard]] bool is_register() const { return m_type == Type::Register; }
     [[nodiscard]] bool is_local() const { return m_type == Type::Local; }
     [[nodiscard]] bool is_constant() const { return m_type == Type::Constant; }

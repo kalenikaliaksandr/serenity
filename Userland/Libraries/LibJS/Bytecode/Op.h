@@ -32,6 +32,45 @@ class FunctionExpression;
 
 namespace JS::Bytecode::Op {
 
+class CreateRestParams final : public Instruction {
+public:
+    CreateRestParams(Operand dst, u32 rest_index)
+        : Instruction(Type::CreateRestParams)
+        , m_dst(dst)
+        , m_rest_index(rest_index)
+    {
+    }
+
+    ThrowCompletionOr<void> execute_impl(Bytecode::Interpreter&) const;
+    ByteString to_byte_string_impl(Bytecode::Executable const&) const;
+
+private:
+    Operand m_dst;
+    u32 m_rest_index;
+};
+
+class CreateArguments final : public Instruction {
+public:
+    enum class Kind {
+        Mapped,
+        Unmapped,
+    };
+
+    CreateArguments(Kind kind, bool is_immutable)
+        : Instruction(Type::CreateArguments)
+        , m_kind(kind)
+        , m_is_immutable(is_immutable)
+    {
+    }
+
+    ThrowCompletionOr<void> execute_impl(Bytecode::Interpreter&) const;
+    ByteString to_byte_string_impl(Bytecode::Executable const&) const;
+
+private:
+    Kind m_kind;
+    bool m_is_immutable { false };
+};
+
 class Mov final : public Instruction {
 public:
     Mov(Operand dst, Operand src)
@@ -406,6 +445,17 @@ class CreateLexicalEnvironment final : public Instruction {
 public:
     explicit CreateLexicalEnvironment()
         : Instruction(Type::CreateLexicalEnvironment)
+    {
+    }
+
+    ThrowCompletionOr<void> execute_impl(Bytecode::Interpreter&) const;
+    ByteString to_byte_string_impl(Bytecode::Executable const&) const;
+};
+
+class CreateVariableEnvironment final : public Instruction {
+public:
+    explicit CreateVariableEnvironment()
+        : Instruction(Type::CreateVariableEnvironment)
     {
     }
 
