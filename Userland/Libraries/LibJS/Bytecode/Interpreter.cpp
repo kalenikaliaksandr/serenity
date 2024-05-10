@@ -353,7 +353,8 @@ FLATTEN_ON_CLANG void Interpreter::run_bytecode(size_t entry_point)
     }
 
     auto& running_execution_context = vm().running_execution_context();
-    auto* locals = running_execution_context.locals.data();
+    auto locals_span = running_execution_context.arguments_and_locals.span().slice(running_execution_context.local_variables_offset);
+    auto* locals = locals_span.data();
     auto& accumulator = this->accumulator();
     auto& executable = current_executable();
     auto const* bytecode = executable.bytecode.data();
@@ -700,9 +701,9 @@ Interpreter::ResultAndReturnRegister Interpreter::run_executable(Executable& exe
     if (running_execution_context.registers.size() < executable.number_of_registers)
         running_execution_context.registers.resize(executable.number_of_registers);
 
-    TemporaryChange restore_arguments { m_arguments, running_execution_context.arguments.span() };
+    TemporaryChange restore_arguments { m_arguments, running_execution_context.arguments() };
     TemporaryChange restore_registers { m_registers, running_execution_context.registers.span() };
-    TemporaryChange restore_locals { m_locals, running_execution_context.locals.span() };
+    TemporaryChange restore_locals { m_locals, running_execution_context.locals() };
 
     reg(Register::accumulator()) = initial_accumulator_value;
     reg(Register::return_value()) = {};
@@ -1312,7 +1313,7 @@ ThrowCompletionOr<void> CreateVariable::execute_impl(Bytecode::Interpreter& inte
 
 ThrowCompletionOr<void> CreateRestParams::execute_impl(Bytecode::Interpreter& interpreter) const
 {
-    auto const& arguments = interpreter.vm().running_execution_context().arguments;
+    auto const& arguments = interpreter.vm().running_execution_context().arguments_and_locals;
     auto arguments_count = interpreter.vm().running_execution_context().passed_argument_count;
     auto array = MUST(Array::create(interpreter.realm(), 0));
     for (size_t rest_index = m_rest_index; rest_index < arguments_count; ++rest_index)
@@ -1324,7 +1325,7 @@ ThrowCompletionOr<void> CreateRestParams::execute_impl(Bytecode::Interpreter& in
 ThrowCompletionOr<void> CreateArguments::execute_impl(Bytecode::Interpreter& interpreter) const
 {
     auto const& function = interpreter.vm().running_execution_context().function;
-    auto const& arguments = interpreter.vm().running_execution_context().arguments;
+    auto const& arguments = interpreter.vm().running_execution_context().arguments_and_locals;
     auto const& environment = interpreter.vm().running_execution_context().lexical_environment;
 
     auto passed_arguments = ReadonlySpan<Value> { arguments.data(), interpreter.vm().running_execution_context().passed_argument_count };

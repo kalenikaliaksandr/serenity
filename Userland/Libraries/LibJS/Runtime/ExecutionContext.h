@@ -63,20 +63,24 @@ public:
 
     Value argument(size_t index) const
     {
-        if (index >= arguments.size()) [[unlikely]]
+        if (index >= arguments_and_locals.size()) [[unlikely]]
             return js_undefined();
-        return arguments[index];
+        return arguments_and_locals[index];
     }
 
     Value& local(size_t index)
     {
-        return locals[index];
+        return arguments_and_locals[local_variables_offset + index];
     }
 
-    u32 passed_argument_count { 0 };
+    Span<Value> arguments() { return arguments_and_locals.span().slice(0, local_variables_offset); }
+    ReadonlySpan<Value> arguments() const { return arguments_and_locals.span().slice(0, local_variables_offset); }
+    Span<Value> locals() { return arguments_and_locals.span().slice(local_variables_offset); }
 
-    Vector<Value> arguments;
-    Vector<Value> locals;
+    u32 passed_argument_count { 0 };
+    u32 local_variables_offset { 0 };
+
+    Vector<Value> arguments_and_locals;
     Vector<Value> registers;
     Vector<Bytecode::UnwindInfo> unwind_contexts;
     Vector<Optional<size_t>> previously_scheduled_jumps;

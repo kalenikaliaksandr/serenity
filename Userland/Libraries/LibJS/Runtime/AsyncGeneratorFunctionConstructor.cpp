@@ -47,7 +47,7 @@ ThrowCompletionOr<NonnullGCPtr<Object>> AsyncGeneratorFunctionConstructor::const
 
     // 2. Let args be the argumentsList that was passed to this function by [[Call]] or [[Construct]].
     MarkedVector<Value> args(heap());
-    for (auto argument : vm.running_execution_context().arguments)
+    for (auto argument : vm.running_execution_context().arguments())
         args.append(argument);
 
     // 3. Return ? CreateDynamicFunction(C, NewTarget, asyncGenerator, args).

@@ -380,16 +380,18 @@ ThrowCompletionOr<Value> ECMAScriptFunctionObject::internal_call(Value this_argu
 
     auto callee_context = ExecutionContext::create(heap());
 
-    callee_context->locals.resize(m_local_variables_names.size());
+    auto arguments_size = max(arguments_list.size(), m_formal_parameters.size());
+    callee_context->local_variables_offset = arguments_size;
+    callee_context->arguments_and_locals.resize(m_local_variables_names.size() + arguments_size);
 
     // Non-standard
-    callee_context->arguments.append(arguments_list.data(), arguments_list.size());
+    for (size_t i = 0; i < arguments_list.size(); ++i)
+        callee_context->arguments_and_locals[i] = arguments_list[i];
     callee_context->program_counter = vm.bytecode_interpreter().program_counter();
     callee_context->passed_argument_count = arguments_list.size();
-    callee_context->arguments.ensure_capacity(m_formal_parameters.size());
     if (arguments_list.size() < m_formal_parameters.size()) {
         for (size_t i = arguments_list.size(); i < m_formal_parameters.size(); ++i)
-            callee_context->arguments.append(js_undefined());
+            callee_context->arguments_and_locals[i] = js_undefined();
     }
 
     // 2. Let calleeContext be PrepareForOrdinaryCall(F, undefined).
@@ -457,16 +459,18 @@ ThrowCompletionOr<NonnullGCPtr<Object>> ECMAScriptFunctionObject::internal_const
 
     auto callee_context = ExecutionContext::create(heap());
 
-    callee_context->locals.resize(m_local_variables_names.size());
+    auto arguments_size = max(arguments_list.size(), m_formal_parameters.size());
+    callee_context->local_variables_offset = arguments_size;
+    callee_context->arguments_and_locals.resize(m_local_variables_names.size() + arguments_size);
 
     // Non-standard
-    callee_context->arguments.append(arguments_list.data(), arguments_list.size());
+    for (size_t i = 0; i < arguments_list.size(); ++i)
+        callee_context->arguments_and_locals[i] = arguments_list[i];
     callee_context->program_counter = vm.bytecode_interpreter().program_counter();
     callee_context->passed_argument_count = arguments_list.size();
-    callee_context->arguments.ensure_capacity(m_formal_parameters.size());
     if (arguments_list.size() < m_formal_parameters.size()) {
         for (size_t i = arguments_list.size(); i < m_formal_parameters.size(); ++i)
-            callee_context->arguments.append(js_undefined());
+            callee_context->arguments_and_locals[i] = js_undefined();
     }
 
     // 4. Let calleeContext be PrepareForOrdinaryCall(F, newTarget).
