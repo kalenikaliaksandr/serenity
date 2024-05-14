@@ -381,14 +381,8 @@ ThrowCompletionOr<Value> ECMAScriptFunctionObject::internal_call(Value this_argu
     auto callee_context = ExecutionContext::create(heap());
 
     // Non-standard
-    callee_context->arguments.ensure_capacity(max(arguments_list.size(), m_formal_parameters.size()));
-    callee_context->arguments.append(arguments_list.data(), arguments_list.size());
     callee_context->program_counter = vm.bytecode_interpreter().program_counter();
     callee_context->passed_argument_count = arguments_list.size();
-    if (arguments_list.size() < m_formal_parameters.size()) {
-        for (size_t i = arguments_list.size(); i < m_formal_parameters.size(); ++i)
-            callee_context->arguments.append(js_undefined());
-    }
 
     // 2. Let calleeContext be PrepareForOrdinaryCall(F, undefined).
     // NOTE: We throw if the end of the native stack is reached, so unlike in the spec this _does_ need an exception check.
@@ -415,7 +409,7 @@ ThrowCompletionOr<Value> ECMAScriptFunctionObject::internal_call(Value this_argu
         ordinary_call_bind_this(*callee_context, this_argument);
 
     // 6. Let result be Completion(OrdinaryCallEvaluateBody(F, argumentsList)).
-    auto result = ordinary_call_evaluate_body();
+    auto result = ordinary_call_evaluate_body(arguments_list);
 
     // 7. Remove calleeContext from the execution context stack and restore callerContext as the running execution context.
     vm.pop_execution_context();
@@ -456,14 +450,8 @@ ThrowCompletionOr<NonnullGCPtr<Object>> ECMAScriptFunctionObject::internal_const
     auto callee_context = ExecutionContext::create(heap());
 
     // Non-standard
-    callee_context->arguments.ensure_capacity(max(arguments_list.size(), m_formal_parameters.size()));
-    callee_context->arguments.append(arguments_list.data(), arguments_list.size());
     callee_context->program_counter = vm.bytecode_interpreter().program_counter();
     callee_context->passed_argument_count = arguments_list.size();
-    if (arguments_list.size() < m_formal_parameters.size()) {
-        for (size_t i = arguments_list.size(); i < m_formal_parameters.size(); ++i)
-            callee_context->arguments.append(js_undefined());
-    }
 
     // 4. Let calleeContext be PrepareForOrdinaryCall(F, newTarget).
     // NOTE: We throw if the end of the native stack is reached, so unlike in the spec this _does_ need an exception check.
@@ -495,7 +483,7 @@ ThrowCompletionOr<NonnullGCPtr<Object>> ECMAScriptFunctionObject::internal_const
     auto constructor_env = callee_context->lexical_environment;
 
     // 8. Let result be Completion(OrdinaryCallEvaluateBody(F, argumentsList)).
-    auto result = ordinary_call_evaluate_body();
+    auto result = ordinary_call_evaluate_body(arguments_list);
 
     // 9. Remove calleeContext from the execution context stack and restore callerContext as the running execution context.
     vm.pop_execution_context();
@@ -821,7 +809,7 @@ template void async_function_start(VM&, PromiseCapability const&, SafeFunction<C
 
 // 10.2.1.4 OrdinaryCallEvaluateBody ( F, argumentsList ), https://tc39.es/ecma262/#sec-ordinarycallevaluatebody
 // 15.8.4 Runtime Semantics: EvaluateAsyncFunctionBody, https://tc39.es/ecma262/#sec-runtime-semantics-evaluatefunctionbody
-Completion ECMAScriptFunctionObject::ordinary_call_evaluate_body()
+Completion ECMAScriptFunctionObject::ordinary_call_evaluate_body(ReadonlySpan<Value> arguments_list)
 {
     auto& vm = this->vm();
     auto& realm = *vm.current_realm();
@@ -837,7 +825,19 @@ Completion ECMAScriptFunctionObject::ordinary_call_evaluate_body()
         m_bytecode_executable = m_ecmascript_code->bytecode_executable();
     }
 
-    vm.running_execution_context().registers_and_constants_and_locals.resize(m_local_variables_names.size() + m_bytecode_executable->number_of_registers + m_bytecode_executable->constants.size());
+    auto arguments_size = max(arguments_list.size(), m_formal_parameters.size());
+    auto registers_and_constants_and_locals_count = m_local_variables_names.size() + m_bytecode_executable->number_of_registers + m_bytecode_executable->constants.size();
+    vm.running_execution_context().registers_and_constants_and_locals_count = registers_and_constants_and_locals_count;
+
+    auto& registers_constants_locals_and_arguments = vm.running_execution_context().registers_constants_locals_and_arguments;
+    registers_constants_locals_and_arguments.resize(registers_and_constants_and_locals_count + arguments_size);
+    for (size_t i = 0; i < arguments_size; ++i) {
+        if (i < arguments_list.size()) {
+            registers_constants_locals_and_arguments[registers_and_constants_and_locals_count + i] = arguments_list[i];
+        } else {
+            registers_constants_locals_and_arguments[registers_and_constants_and_locals_count + i] = js_undefined();
+        }
+    }
 
     auto result_and_frame = vm.bytecode_interpreter().run_executable(*m_bytecode_executable, {});
 

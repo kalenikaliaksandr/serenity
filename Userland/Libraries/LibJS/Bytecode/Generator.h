@@ -40,6 +40,7 @@ public:
 
     [[nodiscard]] ScopedOperand allocate_register();
     [[nodiscard]] ScopedOperand local(u32 local_index);
+    [[nodiscard]] ScopedOperand argument(u32 local_index);
     [[nodiscard]] ScopedOperand accumulator();
 
     void free_register(Register);

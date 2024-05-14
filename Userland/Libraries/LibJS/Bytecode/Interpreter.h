@@ -49,11 +49,11 @@ public:
     ALWAYS_INLINE Value& saved_return_value() { return reg(Register::saved_return_value()); }
     Value& reg(Register const& r)
     {
-        return m_registers_and_constants_and_locals.data()[r.index()];
+        return m_registers_constants_locals_and_arguments.data()[r.index()];
     }
     Value reg(Register const& r) const
     {
-        return m_registers_and_constants_and_locals.data()[r.index()];
+        return m_registers_constants_locals_and_arguments.data()[r.index()];
     }
 
     [[nodiscard]] Value get(Operand) const;
@@ -95,8 +95,7 @@ private:
     GCPtr<Object> m_global_object { nullptr };
     GCPtr<DeclarativeEnvironment> m_global_declarative_environment { nullptr };
     Optional<size_t&> m_program_counter;
-    Span<Value> m_arguments;
-    Span<Value> m_registers_and_constants_and_locals;
+    Span<Value> m_registers_constants_locals_and_arguments;
     ExecutionContext* m_running_execution_context { nullptr };
 };
 

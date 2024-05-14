@@ -41,9 +41,9 @@ NonnullOwnPtr<ExecutionContext> ExecutionContext::copy() const
     copy->this_value = this_value;
     copy->is_strict_mode = is_strict_mode;
     copy->executable = executable;
-    copy->arguments = arguments;
     copy->passed_argument_count = passed_argument_count;
-    copy->registers_and_constants_and_locals = registers_and_constants_and_locals;
+    copy->registers_and_constants_and_locals_count = registers_and_constants_and_locals_count;
+    copy->registers_constants_locals_and_arguments = registers_constants_locals_and_arguments;
     copy->unwind_contexts = unwind_contexts;
     copy->saved_lexical_environments = saved_lexical_environments;
     copy->previously_scheduled_jumps = previously_scheduled_jumps;
@@ -61,8 +61,7 @@ void ExecutionContext::visit_edges(Cell::Visitor& visitor)
     visitor.visit(this_value);
     visitor.visit(executable);
     visitor.visit(function_name);
-    visitor.visit(arguments);
-    visitor.visit(registers_and_constants_and_locals);
+    visitor.visit(registers_constants_locals_and_arguments);
     for (auto& context : unwind_contexts) {
         visitor.visit(context.lexical_environment);
     }
