@@ -63,20 +63,23 @@ public:
 
     Value argument(size_t index) const
     {
-        if (index >= arguments.size()) [[unlikely]]
+        if (index >= registers_constants_locals_and_arguments.size()) [[unlikely]]
             return js_undefined();
-        return arguments[index];
+        return registers_constants_locals_and_arguments[registers_and_constants_and_locals_count + index];
     }
 
     Value& local(size_t index)
     {
-        return registers_and_constants_and_locals[index];
+        return registers_constants_locals_and_arguments[index];
     }
 
+    u32 registers_and_constants_and_locals_count { 0 };
     u32 passed_argument_count { 0 };
 
-    Vector<Value> arguments;
-    Vector<Value> registers_and_constants_and_locals;
+    Span<Value> arguments() { return registers_constants_locals_and_arguments.span().slice(registers_and_constants_and_locals_count); }
+    ReadonlySpan<Value> arguments() const { return registers_constants_locals_and_arguments.span().slice(registers_and_constants_and_locals_count); }
+
+    Vector<Value> registers_constants_locals_and_arguments;
     Vector<Bytecode::UnwindInfo> unwind_contexts;
     Vector<Optional<size_t>> previously_scheduled_jumps;
     Vector<GCPtr<Environment>> saved_lexical_environments;

@@ -17,6 +17,7 @@ public:
         Register,
         Local,
         Constant,
+        Argument,
     };
 
     [[nodiscard]] bool operator==(Operand const&) const = default;

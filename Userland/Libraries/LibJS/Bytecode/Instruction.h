@@ -48,7 +48,6 @@
     O(EnterObjectEnvironment)          \
     O(EnterUnwindContext)              \
     O(Exp)                             \
-    O(GetArgument)                     \
     O(GetById)                         \
     O(GetByIdWithThis)                 \
     O(GetByValue)                      \
@@ -121,7 +120,6 @@
     O(Return)                          \
     O(RightShift)                      \
     O(ScheduleJump)                    \
-    O(SetArgument)                     \
     O(SetVariable)                     \
     O(StrictlyEquals)                  \
     O(StrictlyInequals)                \
