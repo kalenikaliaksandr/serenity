@@ -160,7 +160,7 @@ public:
     {
         if (m_execution_context_stack.is_empty())
             return 0;
-        return running_execution_context().arguments().size();
+        return running_execution_context().arguments.size();
     }
 
     Value argument(size_t index) const

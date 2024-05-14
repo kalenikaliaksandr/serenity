@@ -827,7 +827,7 @@ Completion ECMAScriptFunctionObject::ordinary_call_evaluate_body(ReadonlySpan<Va
 
     auto arguments_size = max(arguments_list.size(), m_formal_parameters.size());
     auto registers_and_constants_and_locals_count = m_local_variables_names.size() + m_bytecode_executable->number_of_registers + m_bytecode_executable->constants.size();
-    vm.running_execution_context().registers_and_constants_and_locals_count = registers_and_constants_and_locals_count;
+    //    vm.running_execution_context().registers_and_constants_and_locals_count = registers_and_constants_and_locals_count;
 
     auto& registers_constants_locals_and_arguments = vm.running_execution_context().registers_constants_locals_and_arguments;
     registers_constants_locals_and_arguments.resize(registers_and_constants_and_locals_count + arguments_size);
@@ -838,6 +838,8 @@ Completion ECMAScriptFunctionObject::ordinary_call_evaluate_body(ReadonlySpan<Va
             registers_constants_locals_and_arguments[registers_and_constants_and_locals_count + i] = js_undefined();
         }
     }
+
+    vm.running_execution_context().arguments = { registers_constants_locals_and_arguments.data() + registers_and_constants_and_locals_count, arguments_size };
 
     auto result_and_frame = vm.bytecode_interpreter().run_executable(*m_bytecode_executable, {});
 

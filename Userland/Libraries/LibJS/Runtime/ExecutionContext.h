@@ -63,9 +63,9 @@ public:
 
     Value argument(size_t index) const
     {
-        if (index >= registers_constants_locals_and_arguments.size()) [[unlikely]]
+        if (index >= arguments.size()) [[unlikely]]
             return js_undefined();
-        return registers_constants_locals_and_arguments[registers_and_constants_and_locals_count + index];
+        return arguments[index];
     }
 
     Value& local(size_t index)
@@ -73,11 +73,10 @@ public:
         return registers_constants_locals_and_arguments[index];
     }
 
-    u32 registers_and_constants_and_locals_count { 0 };
+    //    u32 registers_and_constants_and_locals_count { 0 };
     u32 passed_argument_count { 0 };
 
-    Span<Value> arguments() { return registers_constants_locals_and_arguments.span().slice(registers_and_constants_and_locals_count); }
-    ReadonlySpan<Value> arguments() const { return registers_constants_locals_and_arguments.span().slice(registers_and_constants_and_locals_count); }
+    Span<Value> arguments;
 
     Vector<Value> registers_constants_locals_and_arguments;
     Vector<Bytecode::UnwindInfo> unwind_contexts;

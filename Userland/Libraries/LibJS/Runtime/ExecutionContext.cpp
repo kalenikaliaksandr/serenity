@@ -42,8 +42,8 @@ NonnullOwnPtr<ExecutionContext> ExecutionContext::copy() const
     copy->is_strict_mode = is_strict_mode;
     copy->executable = executable;
     copy->passed_argument_count = passed_argument_count;
-    copy->registers_and_constants_and_locals_count = registers_and_constants_and_locals_count;
     copy->registers_constants_locals_and_arguments = registers_constants_locals_and_arguments;
+    copy->arguments = { copy->registers_constants_locals_and_arguments.data(), arguments.size() };
     copy->unwind_contexts = unwind_contexts;
     copy->saved_lexical_environments = saved_lexical_environments;
     copy->previously_scheduled_jumps = previously_scheduled_jumps;

@@ -1329,7 +1329,7 @@ ThrowCompletionOr<void> CreateVariable::execute_impl(Bytecode::Interpreter& inte
 
 ThrowCompletionOr<void> CreateRestParams::execute_impl(Bytecode::Interpreter& interpreter) const
 {
-    auto const& arguments = interpreter.running_execution_context().arguments();
+    auto const& arguments = interpreter.running_execution_context().arguments;
     auto arguments_count = interpreter.running_execution_context().passed_argument_count;
     auto array = MUST(Array::create(interpreter.realm(), 0));
     for (size_t rest_index = m_rest_index; rest_index < arguments_count; ++rest_index)
@@ -1341,7 +1341,7 @@ ThrowCompletionOr<void> CreateRestParams::execute_impl(Bytecode::Interpreter& in
 ThrowCompletionOr<void> CreateArguments::execute_impl(Bytecode::Interpreter& interpreter) const
 {
     auto const& function = interpreter.running_execution_context().function;
-    auto const& arguments = interpreter.running_execution_context().arguments();
+    auto const& arguments = interpreter.running_execution_context().arguments;
     auto const& environment = interpreter.running_execution_context().lexical_environment;
 
     auto passed_arguments = ReadonlySpan<Value> { arguments.data(), interpreter.running_execution_context().passed_argument_count };
