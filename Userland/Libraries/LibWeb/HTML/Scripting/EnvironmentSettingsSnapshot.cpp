@@ -10,7 +10,7 @@ namespace Web::HTML {
 
 JS_DEFINE_ALLOCATOR(EnvironmentSettingsSnapshot);
 
-EnvironmentSettingsSnapshot::EnvironmentSettingsSnapshot(NonnullOwnPtr<JS::ExecutionContext> execution_context, SerializedEnvironmentSettingsObject const& serialized_settings)
+EnvironmentSettingsSnapshot::EnvironmentSettingsSnapshot(NonnullRefPtr<JS::ExecutionContext> execution_context, SerializedEnvironmentSettingsObject const& serialized_settings)
     : EnvironmentSettingsObject(move(execution_context))
     , m_api_url_character_encoding(serialized_settings.api_url_character_encoding)
     , m_url(serialized_settings.api_base_url)

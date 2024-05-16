@@ -16,7 +16,7 @@ class WindowEnvironmentSettingsObject final : public EnvironmentSettingsObject {
     JS_DECLARE_ALLOCATOR(WindowEnvironmentSettingsObject);
 
 public:
-    static void setup(Page&, URL::URL const& creation_url, NonnullOwnPtr<JS::ExecutionContext>, JS::GCPtr<Environment>, URL::URL top_level_creation_url, Origin top_level_origin);
+    static void setup(Page&, URL::URL const& creation_url, NonnullRefPtr<JS::ExecutionContext>, JS::GCPtr<Environment>, URL::URL top_level_creation_url, Origin top_level_origin);
 
     virtual ~WindowEnvironmentSettingsObject() override;
 
@@ -28,7 +28,7 @@ public:
     virtual CanUseCrossOriginIsolatedAPIs cross_origin_isolated_capability() override;
 
 private:
-    WindowEnvironmentSettingsObject(Window&, NonnullOwnPtr<JS::ExecutionContext>);
+    WindowEnvironmentSettingsObject(Window&, NonnullRefPtr<JS::ExecutionContext>);
 
     virtual void visit_edges(JS::Cell::Visitor&) override;
 

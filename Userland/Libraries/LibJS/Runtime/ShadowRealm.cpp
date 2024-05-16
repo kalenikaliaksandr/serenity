@@ -22,7 +22,7 @@ namespace JS {
 
 JS_DEFINE_ALLOCATOR(ShadowRealm);
 
-ShadowRealm::ShadowRealm(Realm& shadow_realm, NonnullOwnPtr<ExecutionContext> execution_context, Object& prototype)
+ShadowRealm::ShadowRealm(Realm& shadow_realm, NonnullRefPtr<ExecutionContext> execution_context, Object& prototype)
     : Object(ConstructWithPrototypeTag::Tag, prototype)
     , m_shadow_realm(shadow_realm)
     , m_execution_context(move(execution_context))

@@ -203,7 +203,7 @@ void VM::gather_roots(HashMap<Cell*, HeapRoot>& roots)
     for (auto finalization_registry : m_finalization_registry_cleanup_jobs)
         roots.set(finalization_registry, HeapRoot { .type = HeapRoot::Type::VM });
 
-    auto gather_roots_from_execution_context_stack = [&roots](Vector<ExecutionContext*> const& stack) {
+    auto gather_roots_from_execution_context_stack = [&roots](Vector<NonnullRefPtr<ExecutionContext>> const& stack) {
         for (auto const& execution_context : stack) {
             ExecutionContextRootsCollector visitor;
             execution_context->visit_edges(visitor);
@@ -686,16 +686,16 @@ void VM::load_imported_module(ImportedModuleReferrer referrer, ModuleRequest con
     finish_loading_imported_module(referrer, module_request, payload, module);
 }
 
-void VM::push_execution_context(ExecutionContext& context)
+void VM::push_execution_context(NonnullRefPtr<ExecutionContext> context)
 {
     if (!m_execution_context_stack.is_empty())
         m_execution_context_stack.last()->program_counter = bytecode_interpreter().program_counter();
-    m_execution_context_stack.append(&context);
+    m_execution_context_stack.append(move(context));
 }
 
 void VM::pop_execution_context()
 {
-    m_execution_context_stack.take_last();
+    (void)m_execution_context_stack.take_last();
     if (m_execution_context_stack.is_empty() && on_call_stack_emptied)
         on_call_stack_emptied();
 }
@@ -723,7 +723,7 @@ Vector<StackTraceElement> VM::stack_trace() const
 {
     Vector<StackTraceElement> stack_trace;
     for (ssize_t i = m_execution_context_stack.size() - 1; i >= 0; i--) {
-        auto* context = m_execution_context_stack[i];
+        auto context = m_execution_context_stack[i];
         stack_trace.append({
             .execution_context = context,
             .source_range = get_source_range(context).value_or({}),

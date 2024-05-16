@@ -107,16 +107,16 @@ public:
     // TODO: Rename this function instead of providing a second argument, now that the global object is no longer passed in.
     struct CheckStackSpaceLimitTag { };
 
-    ThrowCompletionOr<void> push_execution_context(ExecutionContext& context, CheckStackSpaceLimitTag)
+    ThrowCompletionOr<void> push_execution_context(NonnullRefPtr<ExecutionContext> context, CheckStackSpaceLimitTag)
     {
         // Ensure we got some stack space left, so the next function call doesn't kill us.
         if (did_reach_stack_space_limit())
             return throw_completion<InternalError>(ErrorType::CallStackSizeExceeded);
-        push_execution_context(context);
+        push_execution_context(move(context));
         return {};
     }
 
-    void push_execution_context(ExecutionContext&);
+    void push_execution_context(NonnullRefPtr<ExecutionContext>);
     void pop_execution_context();
 
     // https://tc39.es/ecma262/#running-execution-context
@@ -135,8 +135,8 @@ public:
 
     // https://tc39.es/ecma262/#execution-context-stack
     // The execution context stack is used to track execution contexts.
-    Vector<ExecutionContext*> const& execution_context_stack() const { return m_execution_context_stack; }
-    Vector<ExecutionContext*>& execution_context_stack() { return m_execution_context_stack; }
+    Vector<NonnullRefPtr<ExecutionContext>> const& execution_context_stack() const { return m_execution_context_stack; }
+    Vector<NonnullRefPtr<ExecutionContext>>& execution_context_stack() { return m_execution_context_stack; }
 
     Environment const* lexical_environment() const { return running_execution_context().lexical_environment; }
     Environment* lexical_environment() { return running_execution_context().lexical_environment; }
@@ -282,9 +282,9 @@ private:
 
     Heap m_heap;
 
-    Vector<ExecutionContext*> m_execution_context_stack;
+    Vector<NonnullRefPtr<ExecutionContext>> m_execution_context_stack;
 
-    Vector<Vector<ExecutionContext*>> m_saved_execution_context_stacks;
+    Vector<Vector<NonnullRefPtr<ExecutionContext>>> m_saved_execution_context_stacks;
 
     StackInfo m_stack_info;
 
@@ -323,7 +323,7 @@ private:
 };
 
 template<typename GlobalObjectType, typename... Args>
-[[nodiscard]] static NonnullOwnPtr<ExecutionContext> create_simple_execution_context(VM& vm, Args&&... args)
+[[nodiscard]] static NonnullRefPtr<ExecutionContext> create_simple_execution_context(VM& vm, Args&&... args)
 {
     auto root_execution_context = MUST(Realm::initialize_host_defined_realm(
         vm,

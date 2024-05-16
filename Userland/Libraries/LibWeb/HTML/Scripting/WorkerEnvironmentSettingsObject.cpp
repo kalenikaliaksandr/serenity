@@ -11,7 +11,7 @@ namespace Web::HTML {
 
 JS_DEFINE_ALLOCATOR(WorkerEnvironmentSettingsObject);
 
-JS::NonnullGCPtr<WorkerEnvironmentSettingsObject> WorkerEnvironmentSettingsObject::setup(JS::NonnullGCPtr<Page> page, NonnullOwnPtr<JS::ExecutionContext> execution_context /* FIXME: null or an environment reservedEnvironment, a URL topLevelCreationURL, and an origin topLevelOrigin */)
+JS::NonnullGCPtr<WorkerEnvironmentSettingsObject> WorkerEnvironmentSettingsObject::setup(JS::NonnullGCPtr<Page> page, NonnullRefPtr<JS::ExecutionContext> execution_context /* FIXME: null or an environment reservedEnvironment, a URL topLevelCreationURL, and an origin topLevelOrigin */)
 {
     auto realm = execution_context->realm;
     VERIFY(realm);

@@ -795,7 +795,7 @@ ErrorOr<int> serenity_main(Main::Arguments arguments)
         TRY(repl(realm));
         s_editor->save_history(s_history_path.to_byte_string());
     } else {
-        OwnPtr<JS::ExecutionContext> root_execution_context;
+        RefPtr<JS::ExecutionContext> root_execution_context;
         if (use_test262_global)
             root_execution_context = JS::create_simple_execution_context<JS::Test262::GlobalObject>(*g_vm);
         else

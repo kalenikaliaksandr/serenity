@@ -40,7 +40,7 @@
 class ReplConsoleClient;
 
 RefPtr<JS::VM> g_vm;
-OwnPtr<JS::ExecutionContext> g_execution_context;
+RefPtr<JS::ExecutionContext> g_execution_context;
 OwnPtr<ReplConsoleClient> g_console_client;
 JS::Handle<JS::Value> g_last_value = JS::make_handle(JS::js_undefined());
 

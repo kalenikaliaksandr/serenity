@@ -9,6 +9,7 @@
 #include <AK/DeprecatedFlyString.h>
 #include <AK/HashMap.h>
 #include <AK/NonnullOwnPtr.h>
+#include <AK/NonnullRefPtr.h>
 #include <AK/OwnPtr.h>
 #include <AK/WeakPtr.h>
 #include <LibJS/Bytecode/IdentifierTable.h>

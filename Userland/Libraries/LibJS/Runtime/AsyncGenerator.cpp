@@ -16,7 +16,7 @@ namespace JS {
 
 JS_DEFINE_ALLOCATOR(AsyncGenerator);
 
-ThrowCompletionOr<NonnullGCPtr<AsyncGenerator>> AsyncGenerator::create(Realm& realm, Value initial_value, ECMAScriptFunctionObject* generating_function, NonnullOwnPtr<ExecutionContext> execution_context)
+ThrowCompletionOr<NonnullGCPtr<AsyncGenerator>> AsyncGenerator::create(Realm& realm, Value initial_value, ECMAScriptFunctionObject* generating_function, NonnullRefPtr<ExecutionContext> execution_context)
 {
     auto& vm = realm.vm();
     // This is "g1.prototype" in figure-2 (https://tc39.es/ecma262/img/figure-2.png)
@@ -28,7 +28,7 @@ ThrowCompletionOr<NonnullGCPtr<AsyncGenerator>> AsyncGenerator::create(Realm& re
     return object;
 }
 
-AsyncGenerator::AsyncGenerator(Realm&, Object& prototype, NonnullOwnPtr<ExecutionContext> context)
+AsyncGenerator::AsyncGenerator(Realm&, Object& prototype, NonnullRefPtr<ExecutionContext> context)
     : Object(ConstructWithPrototypeTag::Tag, prototype)
     , m_async_generator_context(move(context))
 {
