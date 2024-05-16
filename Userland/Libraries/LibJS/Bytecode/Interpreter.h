@@ -59,11 +59,8 @@ public:
     [[nodiscard]] Value get(Operand) const;
     void set(Operand, Value);
 
-    void do_return(Value value)
-    {
-        reg(Register::return_value()) = value;
-        reg(Register::exception()) = {};
-    }
+    void do_return(Value value);
+    void leave_execution_context();
 
     void enter_unwind_context();
     void leave_unwind_context();
@@ -78,6 +75,8 @@ public:
     Optional<size_t> program_counter() const { return m_program_counter; }
 
     ExecutionContext& running_execution_context() { return *m_running_execution_context; }
+
+    friend class Op::Call;
 
 private:
     void run_bytecode(size_t entry_point);
@@ -94,10 +93,12 @@ private:
     GCPtr<Realm> m_realm { nullptr };
     GCPtr<Object> m_global_object { nullptr };
     GCPtr<DeclarativeEnvironment> m_global_declarative_environment { nullptr };
-    Optional<size_t&> m_program_counter;
+    size_t m_program_counter { 0 };
     Span<Value> m_arguments;
     Span<Value> m_registers_and_constants_and_locals;
     ExecutionContext* m_running_execution_context { nullptr };
+
+    size_t m_depth { 0 };
 };
 
 extern bool g_dump_bytecode;
