@@ -53,7 +53,7 @@ struct WebEngineCustomData final : public JS::VM::CustomData {
 
     JS::Handle<JS::Realm> internal_realm;
 
-    OwnPtr<JS::ExecutionContext> root_execution_context;
+    RefPtr<JS::ExecutionContext> root_execution_context;
 
     // https://html.spec.whatwg.org/multipage/custom-elements.html#custom-element-reactions-stack
     // Each similar-origin window agent has a custom element reactions stack, which is initially empty.
@@ -66,7 +66,7 @@ struct WebEngineCustomData final : public JS::VM::CustomData {
 };
 
 struct WebEngineCustomJobCallbackData final : public JS::JobCallback::CustomData {
-    WebEngineCustomJobCallbackData(HTML::EnvironmentSettingsObject& incumbent_settings, OwnPtr<JS::ExecutionContext> active_script_context)
+    WebEngineCustomJobCallbackData(HTML::EnvironmentSettingsObject& incumbent_settings, RefPtr<JS::ExecutionContext> active_script_context)
         : incumbent_settings(incumbent_settings)
         , active_script_context(move(active_script_context))
     {
@@ -75,7 +75,7 @@ struct WebEngineCustomJobCallbackData final : public JS::JobCallback::CustomData
     virtual ~WebEngineCustomJobCallbackData() override = default;
 
     JS::NonnullGCPtr<HTML::EnvironmentSettingsObject> incumbent_settings;
-    OwnPtr<JS::ExecutionContext> active_script_context;
+    RefPtr<JS::ExecutionContext> active_script_context;
 };
 
 HTML::Script* active_script();
@@ -84,7 +84,7 @@ ErrorOr<void> initialize_main_thread_vm();
 JS::VM& main_thread_vm();
 
 void queue_mutation_observer_microtask(DOM::Document const&);
-NonnullOwnPtr<JS::ExecutionContext> create_a_new_javascript_realm(JS::VM&, NOESCAPE Function<JS::Object*(JS::Realm&)> create_global_object, NOESCAPE Function<JS::Object*(JS::Realm&)> create_global_this_value);
+NonnullRefPtr<JS::ExecutionContext> create_a_new_javascript_realm(JS::VM&, NOESCAPE Function<JS::Object*(JS::Realm&)> create_global_object, NOESCAPE Function<JS::Object*(JS::Realm&)> create_global_this_value);
 void invoke_custom_element_reactions(Vector<JS::Handle<DOM::Element>>& element_queue);
 
 }

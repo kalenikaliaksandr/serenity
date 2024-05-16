@@ -27,7 +27,7 @@ void Environment::visit_edges(Cell::Visitor& visitor)
     visitor.visit(target_browsing_context);
 }
 
-EnvironmentSettingsObject::EnvironmentSettingsObject(NonnullOwnPtr<JS::ExecutionContext> realm_execution_context)
+EnvironmentSettingsObject::EnvironmentSettingsObject(NonnullRefPtr<JS::ExecutionContext> realm_execution_context)
     : m_realm_execution_context(move(realm_execution_context))
 {
     m_realm_execution_context->context_owner = this;

@@ -18,7 +18,7 @@ class EnvironmentSettingsSnapshot final
     JS_DECLARE_ALLOCATOR(EnvironmentSettingsSnapshot);
 
 public:
-    EnvironmentSettingsSnapshot(NonnullOwnPtr<JS::ExecutionContext>, SerializedEnvironmentSettingsObject const&);
+    EnvironmentSettingsSnapshot(NonnullRefPtr<JS::ExecutionContext>, SerializedEnvironmentSettingsObject const&);
 
     virtual ~EnvironmentSettingsSnapshot() override;
 

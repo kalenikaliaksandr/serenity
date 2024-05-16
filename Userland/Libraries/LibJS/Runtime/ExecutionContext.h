@@ -22,9 +22,9 @@ namespace JS {
 using ScriptOrModule = Variant<Empty, NonnullGCPtr<Script>, NonnullGCPtr<Module>>;
 
 // 9.4 Execution Contexts, https://tc39.es/ecma262/#sec-execution-contexts
-struct ExecutionContext {
-    static NonnullOwnPtr<ExecutionContext> create(Heap&);
-    [[nodiscard]] NonnullOwnPtr<ExecutionContext> copy() const;
+struct ExecutionContext : RefCounted<ExecutionContext> {
+    static NonnullRefPtr<ExecutionContext> create(Heap&);
+    [[nodiscard]] NonnullRefPtr<ExecutionContext> copy() const;
 
     ~ExecutionContext();
 

@@ -119,12 +119,12 @@ public:
     SerializedEnvironmentSettingsObject serialize();
 
 protected:
-    explicit EnvironmentSettingsObject(NonnullOwnPtr<JS::ExecutionContext>);
+    explicit EnvironmentSettingsObject(NonnullRefPtr<JS::ExecutionContext>);
 
     virtual void visit_edges(Cell::Visitor&) override;
 
 private:
-    NonnullOwnPtr<JS::ExecutionContext> m_realm_execution_context;
+    NonnullRefPtr<JS::ExecutionContext> m_realm_execution_context;
     JS::GCPtr<ModuleMap> m_module_map;
 
     JS::GCPtr<EventLoop> m_responsible_event_loop;

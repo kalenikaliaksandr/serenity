@@ -13,9 +13,9 @@
 
 namespace JS {
 
-NonnullOwnPtr<ExecutionContext> ExecutionContext::create(Heap& heap)
+NonnullRefPtr<ExecutionContext> ExecutionContext::create(Heap& heap)
 {
-    return adopt_own(*new ExecutionContext(heap));
+    return adopt_ref(*new ExecutionContext(heap));
 }
 
 ExecutionContext::ExecutionContext(Heap& heap)
@@ -27,7 +27,7 @@ ExecutionContext::~ExecutionContext()
 {
 }
 
-NonnullOwnPtr<ExecutionContext> ExecutionContext::copy() const
+NonnullRefPtr<ExecutionContext> ExecutionContext::copy() const
 {
     auto copy = create(m_heap);
     copy->function = function;

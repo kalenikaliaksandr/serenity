@@ -34,7 +34,7 @@ ThrowCompletionOr<NonnullGCPtr<Realm>> Realm::create(VM& vm)
 }
 
 // 9.6 InitializeHostDefinedRealm ( ), https://tc39.es/ecma262/#sec-initializehostdefinedrealm
-ThrowCompletionOr<NonnullOwnPtr<ExecutionContext>> Realm::initialize_host_defined_realm(VM& vm, Function<Object*(Realm&)> create_global_object, Function<Object*(Realm&)> create_global_this_value)
+ThrowCompletionOr<NonnullRefPtr<ExecutionContext>> Realm::initialize_host_defined_realm(VM& vm, Function<Object*(Realm&)> create_global_object, Function<Object*(Realm&)> create_global_this_value)
 {
     DeferGC defer_gc(vm.heap());
 

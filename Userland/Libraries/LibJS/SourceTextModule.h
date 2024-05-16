@@ -42,7 +42,7 @@ private:
     virtual void visit_edges(Cell::Visitor&) override;
 
     NonnullRefPtr<Program> m_ecmascript_code;            // [[ECMAScriptCode]]
-    NonnullOwnPtr<ExecutionContext> m_execution_context; // [[Context]]
+    NonnullRefPtr<ExecutionContext> m_execution_context; // [[Context]]
     GCPtr<Object> m_import_meta;                         // [[ImportMeta]]
     Vector<ImportEntry> m_import_entries;                // [[ImportEntries]]
     Vector<ExportEntry> m_local_export_entries;          // [[LocalExportEntries]]

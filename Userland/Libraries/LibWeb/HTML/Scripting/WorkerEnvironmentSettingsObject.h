@@ -18,13 +18,13 @@ class WorkerEnvironmentSettingsObject final
     JS_DECLARE_ALLOCATOR(WorkerEnvironmentSettingsObject);
 
 public:
-    WorkerEnvironmentSettingsObject(NonnullOwnPtr<JS::ExecutionContext> execution_context, JS::NonnullGCPtr<WorkerGlobalScope> global_scope)
+    WorkerEnvironmentSettingsObject(NonnullRefPtr<JS::ExecutionContext> execution_context, JS::NonnullGCPtr<WorkerGlobalScope> global_scope)
         : EnvironmentSettingsObject(move(execution_context))
         , m_global_scope(global_scope)
     {
     }
 
-    static JS::NonnullGCPtr<WorkerEnvironmentSettingsObject> setup(JS::NonnullGCPtr<Page> page, NonnullOwnPtr<JS::ExecutionContext> execution_context /* FIXME: null or an environment reservedEnvironment, a URL topLevelCreationURL, and an origin topLevelOrigin */);
+    static JS::NonnullGCPtr<WorkerEnvironmentSettingsObject> setup(JS::NonnullGCPtr<Page> page, NonnullRefPtr<JS::ExecutionContext> execution_context /* FIXME: null or an environment reservedEnvironment, a URL topLevelCreationURL, and an origin topLevelOrigin */);
 
     virtual ~WorkerEnvironmentSettingsObject() override = default;
 

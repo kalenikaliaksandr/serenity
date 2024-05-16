@@ -270,7 +270,7 @@ ErrorOr<void> initialize_main_thread_vm()
         // NOTE: This keeps job_settings alive by keeping realm alive, which is holding onto job_settings.
         HTML::queue_a_microtask(script ? script->settings_object().responsible_document().ptr() : nullptr, JS::create_heap_function(heap, [job_settings, job = move(job), script_or_module = move(script_or_module)] {
             // The dummy execution context has to be kept up here to keep it alive for the duration of the function.
-            OwnPtr<JS::ExecutionContext> dummy_execution_context;
+            RefPtr<JS::ExecutionContext> dummy_execution_context;
 
             if (job_settings) {
                 // 1. If job settings is not null, then check if we can run script with job settings. If this returns "do not run" then return.
@@ -329,7 +329,7 @@ ErrorOr<void> initialize_main_thread_vm()
         auto* script = active_script();
 
         // 3. Let script execution context be null.
-        OwnPtr<JS::ExecutionContext> script_execution_context;
+        RefPtr<JS::ExecutionContext> script_execution_context;
 
         // 4. If active script is not null, set script execution context to a new JavaScript execution context, with its Function field set to null,
         //    its Realm field set to active script's settings object's Realm, and its ScriptOrModule set to active script's record.
@@ -620,7 +620,7 @@ void queue_mutation_observer_microtask(DOM::Document const& document)
 }
 
 // https://html.spec.whatwg.org/multipage/webappapis.html#creating-a-new-javascript-realm
-NonnullOwnPtr<JS::ExecutionContext> create_a_new_javascript_realm(JS::VM& vm, Function<JS::Object*(JS::Realm&)> create_global_object, Function<JS::Object*(JS::Realm&)> create_global_this_value)
+NonnullRefPtr<JS::ExecutionContext> create_a_new_javascript_realm(JS::VM& vm, Function<JS::Object*(JS::Realm&)> create_global_object, Function<JS::Object*(JS::Realm&)> create_global_this_value)
 {
     // 1. Perform InitializeHostDefinedRealm() with the provided customizations for creating the global object and the global this binding.
     // 2. Let realm execution context be the running JavaScript execution context.
