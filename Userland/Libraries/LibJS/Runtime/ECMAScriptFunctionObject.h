@@ -100,6 +100,7 @@ public:
     Variant<PropertyKey, PrivateName, Empty> const& class_field_initializer_name() const { return m_class_field_initializer_name; }
 
     friend class Bytecode::Generator;
+    friend class Bytecode::Op::Call;
 
 protected:
     virtual bool is_strict_mode() const final { return m_strict; }

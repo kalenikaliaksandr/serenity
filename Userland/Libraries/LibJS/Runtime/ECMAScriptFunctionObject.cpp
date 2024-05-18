@@ -837,6 +837,7 @@ Completion ECMAScriptFunctionObject::ordinary_call_evaluate_body()
         m_bytecode_executable = m_ecmascript_code->bytecode_executable();
     }
 
+    VERIFY(vm.running_execution_context().registers_and_constants_and_locals.size() == 0);
     vm.running_execution_context().registers_and_constants_and_locals.resize(m_local_variables_names.size() + m_bytecode_executable->number_of_registers + m_bytecode_executable->constants.size());
 
     auto result_and_frame = vm.bytecode_interpreter().run_executable(*m_bytecode_executable, {});

@@ -59,6 +59,8 @@ public:
     [[nodiscard]] Value get(Operand) const;
     void set(Operand, Value);
 
+    Optional<Operand> leave_execution_context();
+
     Value do_yield(Value value, Optional<Label> continuation);
     void do_return(Value value)
     {
@@ -76,9 +78,11 @@ public:
 
     Executable& current_executable() { return *m_current_executable; }
     Executable const& current_executable() const { return *m_current_executable; }
-    Optional<size_t> program_counter() const { return m_program_counter; }
+    size_t program_counter() const { return m_program_counter; }
 
     ExecutionContext& running_execution_context() { return *m_running_execution_context; }
+
+    friend class Op::Call;
 
 private:
     void run_bytecode(size_t entry_point);
@@ -95,10 +99,27 @@ private:
     GCPtr<Realm> m_realm { nullptr };
     GCPtr<Object> m_global_object { nullptr };
     GCPtr<DeclarativeEnvironment> m_global_declarative_environment { nullptr };
-    Optional<size_t&> m_program_counter;
+    size_t m_program_counter { 0 };
     Span<Value> m_arguments;
     Span<Value> m_registers_and_constants_and_locals;
     ExecutionContext* m_running_execution_context { nullptr };
+
+    struct Frame {
+        Optional<size_t> scheduled_jump;
+        GCPtr<Executable> current_executable;
+        GCPtr<Realm> realm;
+        GCPtr<Object> global_object;
+        GCPtr<DeclarativeEnvironment> global_declarative_environment;
+        size_t program_counter;
+        Span<Value> arguments;
+        Span<Value> registers_and_constants_and_locals;
+        ExecutionContext* running_execution_context { nullptr };
+    };
+
+    Vector<Frame> m_frame_stack;
+
+    void push_frame();
+    void pop_frame();
 };
 
 extern bool g_dump_bytecode;

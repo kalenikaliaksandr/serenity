@@ -80,6 +80,8 @@ public:
     Vector<Bytecode::UnwindInfo> unwind_contexts;
     Vector<Optional<size_t>> previously_scheduled_jumps;
     Vector<GCPtr<Environment>> saved_lexical_environments;
+
+    Optional<Bytecode::Operand> result_dst;
 };
 
 struct StackTraceElement {
