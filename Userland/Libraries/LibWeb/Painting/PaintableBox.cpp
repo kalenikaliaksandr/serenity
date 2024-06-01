@@ -53,6 +53,12 @@ PaintableWithLines::~PaintableWithLines()
 
 CSSPixelPoint PaintableBox::scroll_offset() const
 {
+    if (is_viewport()) {
+        auto navigable = document().navigable();
+        VERIFY(navigable);
+        return navigable->viewport_scroll_offset();
+    }
+
     auto const& node = layout_node();
     if (node.is_generated_for_before_pseudo_element())
         return node.pseudo_element_generator()->scroll_offset(DOM::Element::ScrollOffsetFor::PseudoBefore);
@@ -230,7 +236,7 @@ bool PaintableBox::is_scrollable(ScrollDirection direction) const
     auto overflow = direction == ScrollDirection::Horizontal ? computed_values().overflow_x() : computed_values().overflow_y();
     auto scrollable_overflow_size = direction == ScrollDirection::Horizontal ? scrollable_overflow_rect()->width() : scrollable_overflow_rect()->height();
     auto scrollport_size = direction == ScrollDirection::Horizontal ? absolute_padding_box_rect().width() : absolute_padding_box_rect().height();
-    if (overflow == CSS::Overflow::Auto)
+    if (is_viewport() || overflow == CSS::Overflow::Auto)
         return scrollable_overflow_size > scrollport_size;
     return overflow == CSS::Overflow::Scroll;
 }
@@ -314,14 +320,22 @@ void PaintableBox::paint(PaintContext& context, PaintPhase phase) const
     }
 
     auto scrollbar_width = computed_values().scrollbar_width();
-    if (!layout_box().is_viewport() && phase == PaintPhase::Overlay && scrollbar_width != CSS::ScrollbarWidth::None) {
+    if (phase == PaintPhase::Overlay && scrollbar_width != CSS::ScrollbarWidth::None) {
         auto color = Color(Color::NamedColor::DarkGray).with_alpha(128);
         int thumb_corner_radius = static_cast<int>(context.rounded_device_pixels(scrollbar_thumb_thickness / 2));
         if (auto thumb_rect = scroll_thumb_rect(ScrollDirection::Horizontal); thumb_rect.has_value()) {
+            if (is_viewport()) {
+                color = Color(Color::NamedColor::MidGreen).with_alpha(128);
+                thumb_rect->translate_by(scroll_offset());
+            }
             auto thumb_device_rect = context.enclosing_device_rect(thumb_rect.value());
             context.recording_painter().fill_rect_with_rounded_corners(thumb_device_rect.to_type<int>(), color, thumb_corner_radius, thumb_corner_radius, thumb_corner_radius, thumb_corner_radius);
         }
         if (auto thumb_rect = scroll_thumb_rect(ScrollDirection::Vertical); thumb_rect.has_value()) {
+            if (is_viewport()) {
+                color = Color(Color::NamedColor::MidGreen).with_alpha(128);
+                thumb_rect->translate_by(scroll_offset());
+            }
             auto thumb_device_rect = context.enclosing_device_rect(thumb_rect.value());
             context.recording_painter().fill_rect_with_rounded_corners(thumb_device_rect.to_type<int>(), color, thumb_corner_radius, thumb_corner_radius, thumb_corner_radius, thumb_corner_radius);
         }

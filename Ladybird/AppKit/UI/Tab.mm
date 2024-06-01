@@ -85,8 +85,8 @@ static constexpr CGFloat const WINDOW_HEIGHT = 800;
         [self setIsVisible:YES];
 
         auto* scroll_view = [[NSScrollView alloc] initWithFrame:[self frame]];
-        [scroll_view setHasVerticalScroller:YES];
-        [scroll_view setHasHorizontalScroller:YES];
+        [scroll_view setHasVerticalScroller:NO];
+        [scroll_view setHasHorizontalScroller:NO];
         [scroll_view setLineScroll:24];
 
         [scroll_view setContentView:self.web_view];
